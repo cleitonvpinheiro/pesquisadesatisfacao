@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Satisfação</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Avalie nosso Refeitório</h1>
+
+        <div class="options">
+            <button type="button" class="btn excelente" data-value="excelente">😊 Execelente</button>
+            <button type="button" class="btn bom" data-value="bom">😃 Bom</button>
+            <button type="button" class="btn ruim" data-value="ruim">😞 Ruim</button>
+            
+        </div>
+
+        <textarea id="sugestao" placeholder="Deixe sua sugestão (opcional)"></textarea>
+
+        <button type="button" id="enviar" class="btn enviar">Enviar</button>
+
+        <p id="mensagem" class="mensagem"></p>
+    </div>
+    
+    <script src="satisfacao.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Avaliações</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Dashboard - Avaliações do Refeitório</h1>
+
+        <div class="card">
+             <canvas id="grafico"></canvas>       
+        </div>
+
+        <div class="filtros">
+            <label for="tipoFiltro">Tipo:</label>
+            <select id="tipoFiltro">
+                <option value="">Todos</option>
+                <option value ="excelente">Excelente</option>
+                <option value ="bom">Bom</option>
+                <option value ="ruim">Ruim</option>
+            </select>
+
+            <label for="dataFiltro">Data:</label>
+            <input type="date" id="dataFiltro">
+            <button id="btnFiltrar">Filtrar</button>
+            <button id="btnLimpar">Limpar</button>
+        </div>
+
+        <h2>Sugestão</h2>
+        <ul id="lista-avaliacoes"></ul>
+
+    </div>
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

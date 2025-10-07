@@ -1,0 +1,24 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ambiente
+.env
+
+# Banco de dados local
+backend/database.json
+
+# Build
+dist/
+build/
+
+# Outros arquivos temporários
+*.tmp
+*.swp
