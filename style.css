@@ -28,6 +28,42 @@ h1 {
     font-size: 22px;
 }
 
+/* Seletor de idioma */
+.language-selector {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.language-selector label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+.language-selector select {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.language-selector select:hover {
+    border-color: #007bff;
+}
+
+.language-selector select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
 .options {
     display: flex;
     justify-content: space-between;

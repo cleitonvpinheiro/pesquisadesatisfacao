@@ -1,0 +1,223 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    background: #f8f9fa;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    background: #fff;
+    margin: 0 auto;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.container:hover {
+    box-shadow: 0 6px 20px rgb(0, 0, 0, 0.1);
+}
+
+h2 {
+    text-align: center;
+    color: #007bff;
+    margin-bottom: 25px;
+}
+
+/* Seletor de idioma */
+.language-selector {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.language-selector label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.language-selector select {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.language-selector select:hover {
+    border-color: #007bff;
+}
+
+.language-selector select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+h3 {
+    margin-top: 25px;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: #444;
+    border-left: 4px solid #007bff;
+    padding-left: 8px;
+}
+
+/* ===== FORMULÁRIO ===== */
+form label {
+    display: block;
+    margin: 8px 0 5px;
+    font-weight: 500;
+}
+
+input[type="radio"],
+input[type="number"] {
+    margin-right: 8px;
+    accent-color: #007bff;
+}
+
+/* ===== INPUTS E TEXTAREA ===== */
+input[type="number"] {
+    width: 100px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    transition: border-color 0.2s;
+}
+
+input[type="number"]:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+textarea:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* ===== ESTRELAS ===== */
+.estrelas {
+    margin-bottom: 12px;
+    font-size: 22px;
+}
+
+.estrelas span {
+    transition: transform 0.2s, filter 0.2s;
+    filter: grayscale(1);
+}
+
+.estrelas span:hover,
+.estrelas span:hover ~ span {
+    transform: scale(1.2);
+}
+
+.estrelas span.selecionada {
+    filter: grayscale(0);
+}
+
+/* ===== BOTÃO ===== */
+.btn-enviar {
+    display: block;
+    width: 100%;
+    margin-top: 25px;
+    background: #007bff;
+    color: #fff;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.btn-enviar:hover {
+    background: #0056b3;
+    transform: scale(1.02);
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    h3 {
+        font-size: 1rem;
+    }
+
+    .btn-enviar {
+        font-size: 0.95rem;
+        padding: 10px;
+    }
+}
+
+/* ===== CLASSIFICAÇÃO DE NOTAS ===== */
+.classificacao-feedback {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+    min-height: 20px;
+}
+
+.classificacao-ruim {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef5350;
+}
+
+.classificacao-bom {
+    background-color: #fff8e1;
+    color: #f57f17;
+    border: 1px solid #ffca28;
+}
+
+.classificacao-excelente {
+    background-color: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #66bb6a;
+}
+
+.classificacao-feedback.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.classificacao-feedback:empty {
+    display: none;
+}

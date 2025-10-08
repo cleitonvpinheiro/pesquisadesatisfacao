@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Dashboard Refeitório</title>
+    <link rel="stylesheet" href="login.css">
+    <script src="translations.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Seletor de idioma -->
+        <div class="language-selector">
+            <label for="languageSelect" data-translate="language">Idioma</label>
+            <select id="languageSelect" onchange="changeLanguage(this.value)">
+                <option value="pt" data-translate="portuguese">Português</option>
+                <option value="en" data-translate="english">English</option>
+                <option value="es" data-translate="spanish">Español</option>
+            </select>
+        </div>
+
+        <div class="login-box">
+            <div class="login-header">
+                <h1 data-translate="loginTitle">Acesso ao Dashboard</h1>
+                <p data-translate="loginSubtitle">Entre com suas credenciais para acessar o painel administrativo</p>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username" data-translate="username">Usuário:</label>
+                    <input type="text" id="username" name="username" required data-translate-placeholder="usernamePlaceholder" placeholder="Digite seu usuário">
+                </div>
+
+                <div class="form-group">
+                    <label for="password" data-translate="password">Senha:</label>
+                    <input type="password" id="password" name="password" required data-translate-placeholder="passwordPlaceholder" placeholder="Digite sua senha">
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn-login" data-translate="loginButton">Entrar</button>
+                </div>
+
+                <div id="error-message" class="error-message" style="display: none;"></div>
+            </form>
+
+            <div class="login-footer">
+                <p data-translate="backToSurvey">Voltar para a <a href="index.html" data-translate="surveyLink">pesquisa de satisfação</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>
