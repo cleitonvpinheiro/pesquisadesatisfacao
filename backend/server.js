@@ -1,4 +1,3 @@
-// server.js
 import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
@@ -10,11 +9,40 @@ import rateLimit from "express-rate-limit"
 import Joi from "joi"
 import bcrypt from "bcrypt"
 import cookieParser from "cookie-parser"
+import passport from "passport"
+import { Strategy as LdapStrategy } from "passport-ldapauth"
+import { Server } from "http"
+import { url } from "inspector"
+
+
+const ldapOptions = {
+    server: {
+        url: process.env.LDAP_URL,
+        bindDN: process.env.LDAP_BIND_DN,
+        bindCredentials: process.env.LDAP_BIND_CREDENTIALS,
+        searchBase: process.env.LDAP_BASE_DN,
+        // Suporte a múltiplos atributos comuns para login LDAP/AD
+        searchFilter: process.env.LDAP_SEARCH_FILTER || "(|(sAMAccountName={{username}})(uid={{username}})(userPrincipalName={{username}}))"
+    },
+    handleErrorsAsFailures: true,
+    passReqToCallback: true,
+}
 
 // Carrega variáveis de ambiente
 dotenv.config()
 
 const app = express()
+
+const ldapEnabled = Boolean(process.env.LDAP_URL)
+if (ldapEnabled) {
+  passport.use(new LdapStrategy(ldapOptions, (req, user, done) => {
+    if (!user) return done(null, false)
+    return done(null, user)
+  }))
+  app.use(passport.initialize())
+} else {
+  console.warn("LDAP desabilitado: variáveis de ambiente não configuradas.")
+}
 const PORT = process.env.PORT || 3003
 const DB_File = "./database.json"
 
@@ -27,6 +55,20 @@ const validUsers = [
 
 // Armazenamento de sessões em memória (em produção, usar Redis ou banco)
 const sessions = new Map()
+
+// Armazenamento de clientes SSE
+let sseClients = [];
+
+// Função para enviar atualizações SSE
+function enviarAtualizacaoSSE(data) {
+    sseClients.forEach(client => {
+        try {
+            client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+        } catch (e) {
+            console.error("Erro ao enviar SSE:", e);
+        }
+    });
+}
 
 // Configurações de segurança
 app.use(helmet({
@@ -41,13 +83,48 @@ app.use(helmet({
 }))
 
 // Configuração CORS específica
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8000']
+const defaultOrigins = [
+    'http://localhost:8000',
+    'http://10.41.1.11:8000',
+    'http://192.168.0.4:8000',
+    'http://127.0.0.1:5500',
+    'http://localhost:8081',
+    'http://10.41.1.11:8081',
+    'http://localhost:19006'
+]
+const envOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])]
 app.use(cors({
-    origin: allowedOrigins,
+    origin: function(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true)
+        }
+        return callback(new Error('Not allowed by CORS'))
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'content-type'],
+    optionsSuccessStatus: 204
 }))
+
+// ✅ Responder explicitamente preflight OPTIONS em todas as rotas
+// app.options removido para compatibilidade com Express 5 — preflight será tratado pelo middleware abaixo
+
+// Garantir 204 para preflight mesmo sem rota específica
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        const origin = req.headers.origin
+        if (!origin || allowedOrigins.includes(origin)) {
+            res.header('Access-Control-Allow-Origin', origin || '*')
+            res.header('Access-Control-Allow-Credentials', 'true')
+            res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+            res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, content-type')
+            return res.sendStatus(204)
+        }
+        return res.status(403).send('Not allowed by CORS')
+    }
+    next()
+})
 
 // Rate limiting para rotas de autenticação
 const authLimiter = rateLimit({
@@ -86,15 +163,15 @@ function generateToken() {
 function requireAuth(req, res, next) {
     // Tenta obter token do cookie primeiro, depois do header Authorization
     let token = req.cookies?.authToken
-    
+
     if (!token) {
         token = req.headers.authorization?.replace('Bearer ', '')
     }
-    
+
     if (!token) {
         return res.status(401).json({ error: 'Token de acesso requerido' })
     }
-    
+
     const session = sessions.get(token)
     if (!session || session.expires < Date.now()) {
         sessions.delete(token)
@@ -102,7 +179,7 @@ function requireAuth(req, res, next) {
         res.clearCookie('authToken')
         return res.status(401).json({ error: 'Token inválido ou expirado' })
     }
-    
+
     // Atualiza último acesso
     session.lastAccess = Date.now()
     req.user = session.user
@@ -111,7 +188,8 @@ function requireAuth(req, res, next) {
 
 // Esquemas de validação Joi
 const loginSchema = Joi.object({
-    username: Joi.string().alphanum().min(3).max(30).required(),
+    // Permite usuários de LDAP com caracteres comuns: letras, números, ponto, underline, hífen, @ e barra invertida (domínio\\usuário)
+    username: Joi.string().pattern(/^[A-Za-z0-9._\-@\\]{3,64}$/).required(),
     password: Joi.string().min(3).max(50).required()
 })
 
@@ -134,67 +212,137 @@ const questionarioSchema = Joi.object({
     sugestao: Joi.string().max(500).allow('')
 })
 
+// Rota para SSE (Server-Sent Events) - Atualizações em tempo real para o Dashboard
+app.get('/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    
+    // Envia cabeçalhos imediatamente
+    if (res.flushHeaders) res.flushHeaders();
+
+    const clientId = Date.now();
+    const newClient = {
+        id: clientId,
+        res
+    };
+    sseClients.push(newClient);
+
+    // Remove cliente ao desconectar
+    req.on('close', () => {
+        sseClients = sseClients.filter(client => client.id !== clientId);
+    });
+});
+
 // 🔐 Rotas de autenticação
-app.post("/login", authLimiter, async (req, res) => {
-    try {
-        // Validação com Joi
-        const { error, value } = loginSchema.validate(req.body)
-        if (error) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Dados inválidos: ' + error.details[0].message 
-            })
+app.post("/login", authLimiter, (req, res, next) => {
+  // 🔹 Validação básica com Joi
+  const { error, value } = loginSchema.validate(req.body)
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Dados inválidos: " + error.details[0].message
+    })
+  }
+
+  // Normaliza formatos de username (DOMINIO\\usuario, usuario@dominio -> usuario)
+  const originalUsername = value.username
+  const normalizedUsername = originalUsername.includes('\\')
+    ? originalUsername.split('\\').pop()
+    : originalUsername.split('@')[0]
+  value.username = normalizedUsername
+
+  if (ldapEnabled) {
+    passport.authenticate("ldapauth", { session: false }, (err, user, info) => {
+      if (err) {
+        console.error("Erro LDAP:", err)
+        return res.status(500).json({ success: false, message: "Erro interno no LDAP" })
+      }
+
+      // 🔹 Se o usuário não foi encontrado no LDAP, tenta autenticação local
+      if (!user) {
+        const localUser = validUsers.find(
+          u => u.username === value.username && u.password === value.password
+        )
+        if (!localUser) {
+          console.warn(`Tentativa de login inválida: ${value.username}`)
+          return res.status(401).json({ success: false, message: "Usuário e senha inválidos." })
         }
-        
-        const { username, password } = value
-        
-        // Verifica credenciais
-        const user = validUsers.find(u => u.username === username && u.password === password)
-        
-        if (!user) {
-            // Log de tentativa de login inválida (sem expor dados sensíveis)
-            console.warn(`Tentativa de login inválida para usuário: ${username} em ${new Date().toISOString()}`)
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Credenciais inválidas' 
-            })
+        user = localUser
+      }
+
+      // 🔑 Gera token de sessão (mesma lógica atual)
+      const token = generateToken()
+      const expires = Date.now() + (24 * 60 * 60 * 1000) // 24h
+
+      sessions.set(token, {
+        user: {
+          username: user.sAMAccountName || user.uid || user.username,
+          role: user.role || "ldap_user"
+        },
+        expires,
+        createdAt: Date.now(),
+        lastAccess: Date.now()
+      })
+
+      // 🔸 Define cookie seguro
+      res.cookie("authToken", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000
+      })
+
+      console.log(`Login bem-sucedido para: ${value.username} (${user.role || "ldap_user"})`)
+      res.json({
+        success: true,
+        token,
+        user: {
+          username: user.sAMAccountName || user.uid || user.username,
+          role: user.role || "ldap_user"
         }
-        
-        // Gera token de sessão
-        const token = generateToken()
-        const expires = Date.now() + (24 * 60 * 60 * 1000) // 24 horas
-        
-        sessions.set(token, {
-            user: { username: user.username, role: user.role },
-            expires,
-            createdAt: Date.now(),
-            lastAccess: Date.now()
-        })
-        
-        // Log de login bem-sucedido
-        console.log(`Login bem-sucedido para usuário: ${username} em ${new Date().toISOString()}`)
-        
-        // Define cookie httpOnly para o token
-        res.cookie('authToken', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // HTTPS em produção
-            sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000 // 24 horas
-        })
-        
-        res.json({
-            success: true,
-            token, // Mantém para compatibilidade com frontend atual
-            user: { username: user.username, role: user.role }
-        })
-        
-    } catch (error) {
-        console.error('Erro no login:', error.message)
-        res.status(500).json({ 
-            success: false, 
-            message: 'Erro interno do servidor' 
-        })
+      })
+    })(req, res, next)
+  } else {
+    // 🔹 LDAP desativado: autenticação somente local
+    const localUser = validUsers.find(
+      u => u.username === value.username && u.password === value.password
+    )
+    if (!localUser) {
+      console.warn(`Tentativa de login inválida: ${value.username}`)
+      return res.status(401).json({ success: false, message: "Usuário e senha inválidos." })
     }
+
+    const token = generateToken()
+    const expires = Date.now() + (24 * 60 * 60 * 1000) // 24h
+
+    sessions.set(token, {
+      user: {
+        username: localUser.username,
+        role: localUser.role
+      },
+        expires,
+        createdAt: Date.now(),
+        lastAccess: Date.now()
+    })
+
+    res.cookie("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000
+    })
+
+    console.log(`Login bem-sucedido (local) para: ${value.username} (${localUser.role})`)
+    res.json({
+      success: true,
+      token,
+      user: {
+        username: localUser.username,
+        role: localUser.role
+      }
+    })
+  }
 })
 
 app.post("/logout", (req, res) => {
@@ -205,34 +353,34 @@ app.post("/logout", (req, res) => {
             const authHeader = req.headers['authorization']
             token = authHeader && authHeader.split(' ')[1]
         }
-        
+
         if (token) {
             // Remove sessão do servidor
             sessions.delete(token)
             console.log(`Logout realizado em ${new Date().toISOString()}`)
         }
-        
+
         // Remove cookie
         res.clearCookie('authToken')
-        
+
         res.json({
             success: true,
             message: 'Logout realizado com sucesso'
         })
-        
+
     } catch (error) {
         console.error('Erro no logout:', error.message)
-        res.status(500).json({ 
-            success: false, 
-            message: 'Erro interno do servidor' 
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
         })
     }
 })
 
 app.get("/verify-auth", requireAuth, (req, res) => {
-    res.json({ 
-        success: true, 
-        user: req.user 
+    res.json({
+        success: true,
+        user: req.user
     })
 })
 
@@ -242,8 +390,8 @@ app.post("/avaliar", async (req, res) => {
         // Validação com Joi
         const { error, value } = avaliacaoSchema.validate(req.body)
         if (error) {
-            return res.status(400).json({ 
-                error: 'Dados inválidos: ' + error.details[0].message 
+            return res.status(400).json({
+                error: 'Dados inválidos: ' + error.details[0].message
             })
         }
 
@@ -286,52 +434,99 @@ app.post("/avaliar", async (req, res) => {
         res.status(500).json({ error: "Erro interno ao salvar avaliação." });
     }
 });
-// 🧾 Rota nova — formulário completo de satisfação
+
+// 📝 Rota para salvar questionário completo
 app.post("/questionario", async (req, res) => {
     try {
-        const dadosQuestionario = req.body;
-
-        if (!dadosQuestionario) {
-            return res.status(400).json({ error: "Dados do questionário ausentes." });
+        const { notaGeral, horario, sugestao, avaliacaoInicial, ...outrosCampos } = req.body;
+        
+        // Validação básica apenas para campos críticos do sistema, o resto é dinâmico
+        if (!notaGeral && notaGeral !== 0) {
+            return res.status(400).json({ error: "Nota geral é obrigatória" });
         }
-
-        // Validação com Joi
-        const { error, value } = questionarioSchema.validate(dadosQuestionario)
-        if (error) {
-            return res.status(400).json({ 
-                error: 'Dados inválidos: ' + error.details[0].message 
-            })
-        }
-
-        const db = await getDB();
 
         const novoQuestionario = {
             id: Date.now(),
-            ...value,
+            horario: horario || "Não informado",
+            notaGeral,
+            sugestao: sugestao || "",
+            ...outrosCampos, // Salva todos os campos dinâmicos (qualidade, variedade, perguntas novas, etc.)
             data: new Date().toISOString(),
-            ip: req.ip || 'unknown'
+            ip: req.ip
         };
 
+        const db = await getDB();
         db.questionarios.push(novoQuestionario);
+        
+        // Se a avaliação inicial veio junto, salva também na lista de avaliações rápidas
+        if (avaliacaoInicial) {
+             const novaAvaliacao = {
+                id: Date.now() - 1, // Pequeno offset para não colidir ID se for muito rápido
+                avaliacao: avaliacaoInicial,
+                sugestao: sugestao || "",
+                notaGeral,
+                data: new Date().toISOString(),
+                ip: req.ip
+            };
+            db.avaliacoes.push(novaAvaliacao);
+        }
+
         await saveDB(db);
+        
+        // Atualiza clientes via SSE
+        enviarAtualizacaoSSE({ type: 'nova_avaliacao', data: novoQuestionario });
 
-        console.log(`Novo questionário registrado: ${value.horario} em ${new Date().toISOString()}`);
-
-        res.json({
-            message: "✅ Questionário registrado com sucesso!",
-            novoQuestionario: {
-                id: novoQuestionario.id,
-                horario: novoQuestionario.horario,
-                data: novoQuestionario.data
-            }
-        });
-
-    } catch (err) {
-        console.error("Erro no /questionario:", err.message);
-        res.status(500).json({ error: "Erro interno ao salvar questionário." });
+        res.status(201).json({ message: "Questionário salvo com sucesso!" });
+    } catch (error) {
+        console.error("Erro ao salvar questionário:", error);
+        res.status(500).json({ error: "Erro interno ao salvar questionário" });
     }
 });
 
+// Configuração do formulário
+app.get("/config/form", async (req, res) => {
+    try {
+        const db = await getDB();
+        
+        // Se não existir config, cria padrão
+        if (!db.formConfig) {
+            db.formConfig = {
+                questions: [
+                    { id: "qualidade", type: "stars", label: "Qualidade da Refeição", enabled: true },
+                    { id: "variedade", type: "stars", label: "Variedade de Opções", enabled: true },
+                    { id: "temperatura", type: "stars", label: "Temperatura dos Alimentos", enabled: true },
+                    { id: "limpeza", type: "stars", label: "Limpeza do Ambiente", enabled: true },
+                    { id: "organizacao", type: "stars", label: "Organização e Atendimento", enabled: true }
+                ]
+            };
+            await saveDB(db);
+        }
+
+        res.json(db.formConfig);
+    } catch (error) {
+        console.error("Erro ao buscar config:", error);
+        res.status(500).json({ error: "Erro ao buscar configuração" });
+    }
+});
+
+app.post("/config/form", requireAuth, async (req, res) => {
+    try {
+        const { questions } = req.body;
+        
+        if (!Array.isArray(questions)) {
+            return res.status(400).json({ error: "Formato inválido" });
+        }
+
+        const db = await getDB();
+        db.formConfig = { questions };
+        await saveDB(db);
+
+        res.json({ message: "Configuração salva com sucesso", config: db.formConfig });
+    } catch (error) {
+        console.error("Erro ao salvar config:", error);
+        res.status(500).json({ error: "Erro ao salvar configuração" });
+    }
+});
 
 // 📊 Rota para buscar avaliações
 app.get("/avaliacoes", requireAuth, async (req, res) => {

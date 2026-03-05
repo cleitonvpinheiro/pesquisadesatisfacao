@@ -1,0 +1,71 @@
+{
+  "formConfig": {
+    "questions": [
+      {
+        "id": "horario",
+        "type": "radio",
+        "label": "Qual refeição você realizou?",
+        "options": [
+          "Café",
+          "Almoço",
+          "Jantar"
+        ],
+        "enabled": true
+      },
+      {
+        "id": "qualidade",
+        "type": "stars",
+        "label": "Qualidade da Refeição",
+        "enabled": true
+      },
+      {
+        "id": "variedade",
+        "type": "stars",
+        "label": "Variedade de Opções",
+        "enabled": true
+      },
+      {
+        "id": "cardapio",
+        "type": "radio",
+        "label": "O cardápio atendeu suas necessidades?",
+        "options": [
+          "Sim",
+          "Parcialmente",
+          "Não"
+        ],
+        "enabled": true
+      },
+      {
+        "id": "temperatura",
+        "type": "stars",
+        "label": "Temperatura dos Alimentos",
+        "enabled": true
+      },
+      {
+        "id": "limpeza",
+        "type": "stars",
+        "label": "Limpeza do Ambiente",
+        "enabled": true
+      },
+      {
+        "id": "organizacao",
+        "type": "stars",
+        "label": "Organização e Atendimento",
+        "enabled": true
+      },
+      {
+        "id": "espera",
+        "type": "radio",
+        "label": "Tempo de espera na fila",
+        "options": [
+          "Rápido",
+          "Razoável",
+          "Demorado"
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "avaliacoes": [],
+  "questionarios": []
+}

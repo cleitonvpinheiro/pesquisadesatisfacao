@@ -121,6 +121,25 @@ function initAuth() {
 function displayUserInfo() {
     const userInfo = getUserInfo();
     if (userInfo) {
+        // Opção 1: Exibir no Header (Novo Layout)
+        const headerDisplay = document.getElementById('user-info-display');
+        if (headerDisplay) {
+            headerDisplay.innerHTML = `
+                <div class="header-user-profile">
+                    <span class="user-name">${userInfo.username}</span>
+                    <span class="user-role-badge">${userInfo.role}</span>
+                    <button id="logout-btn-header" class="btn-logout-icon" title="Sair">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    </button>
+                </div>
+            `;
+            // Adiciona listener ao novo botão
+            const btn = document.getElementById('logout-btn-header');
+            if(btn) btn.addEventListener('click', logout);
+            return;
+        }
+
+        // Opção 2: Fallback (Layout Antigo)
         // Cria elemento de informações do usuário se não existir
         let userInfoElement = document.getElementById('user-info');
         if (!userInfoElement) {
@@ -144,6 +163,9 @@ function displayUserInfo() {
                 <button id="logout-btn" class="btn-logout">Sair</button>
             </div>
         `;
+        
+        // Adiciona listener ao botão antigo
+        addLogoutButton();
     }
 }
 

@@ -55,11 +55,69 @@ const translations = {
     thankYouResponse: '✅ Obrigado pela sua resposta!',
     connectionError: '🚫 Erro de conexão com o servidor.',
     
-    // Seletor de idioma
+    // Login
+    loginTitle: 'Acesso ao Dashboard',
+    loginSubtitle: 'Entre com suas credenciais para acessar o painel administrativo',
+    username: 'Usuário:',
+    password: 'Senha:',
+    usernamePlaceholder: 'Digite seu usuário',
+    passwordPlaceholder: 'Digite sua senha',
+    loginButton: 'Entrar',
+    backToSurvey: 'Voltar para a',
+    surveyLink: 'Pesquisa de Satisfação',
+    fillAllFields: '⚠️ Por favor, preencha todos os campos.',
+    invalidCredentials: '⚠️ Usuário e senha inválidos.',
+    
+    // Selector de idioma
     language: 'Idioma',
     portuguese: 'Português',
     english: 'English',
-    spanish: 'Español'
+    spanish: 'Español',
+    
+    // Dark Mode
+    darkModeTitle: 'Alternar Modo Escuro',
+
+    // Dashboard
+    dashboardTitle: "Dashboard - Avaliações do Refeitório",
+    tabOverview: "Visão Geral",
+    tabConfig: "Configuração do Formulário",
+    cardClassificacao: "Classificação Geral",
+    cardNotas: "Distribuição por Nota Geral",
+    labelClassificacao: "Classificação:",
+    labelDataInicio: "Data Início:",
+    labelDataFim: "Data Fim:",
+    btnFiltrar: "Filtrar",
+    btnLimpar: "Limpar",
+    resumoTotal: "Total de respostas:",
+    resumoMedia: "Média da nota geral:",
+    resumoNPS: "NPS Estimado:",
+    tableHeaderData: "Data",
+    tableHeaderRefeicao: "Refeição",
+    tableHeaderNota: "Nota",
+    tableHeaderComentario: "Comentário",
+    configTitle: "Personalizar Formulário",
+    btnAddStars: "+ Adicionar Pergunta (Estrelas)",
+    btnAddRadio: "+ Adicionar Pergunta (Opções)",
+    
+    // Configuração do Formulário
+    configFieldsTitle: "Campos do Questionário",
+    configFieldsDesc: "Adicione, remova ou edite as perguntas do formulário móvel.",
+    btnSaveConfig: "Salvar Configurações",
+    typeStars: "Estrelas",
+    typeMulti: "Múltipla Escolha",
+    labelId: "ID: ",
+    btnDisable: "Desativar",
+    btnEnable: "Ativar",
+    btnRemove: "Remover",
+    confirmRemoveQuestion: "Remover esta pergunta?",
+    btnAddOption: "+ Opção",
+    alertConfigSaved: "Configurações salvas!",
+    alertConfigError: "Erro ao salvar",
+    alertConnectionError: "Erro de conexão",
+    newQuestionLabel: "Nova Pergunta",
+    newQuestionRadioLabel: "Nova Pergunta (Opções)",
+    btnSave: "Salvar Configurações",
+    exportExcel: "Exportar Excel"
   },
   
   en: {
@@ -123,6 +181,9 @@ const translations = {
     english: 'English',
     spanish: 'Español',
     
+    // Dark Mode
+    darkModeTitle: 'Toggle Dark Mode',
+    
     // Login
     loginTitle: 'Dashboard Access',
     loginSubtitle: 'Enter your credentials to access the administrative panel',
@@ -134,7 +195,49 @@ const translations = {
     backToSurvey: 'Back to',
     surveyLink: 'satisfaction survey',
     fillAllFields: '⚠️ Please fill in all fields.',
-    invalidCredentials: '⚠️ Invalid username or password.'
+    invalidCredentials: '⚠️ Invalid username or password.',
+
+    // Dashboard
+    dashboardTitle: "Dashboard - Cafeteria Reviews",
+    tabOverview: "Overview",
+    tabConfig: "Form Configuration",
+    cardClassificacao: "General Classification",
+    cardNotas: "Score Distribution",
+    labelClassificacao: "Classification:",
+    labelDataInicio: "Start Date:",
+    labelDataFim: "End Date:",
+    btnFiltrar: "Filter",
+    btnLimpar: "Clear",
+    resumoTotal: "Total Reviews:",
+    resumoMedia: "Average Score:",
+    resumoNPS: "Estimated NPS:",
+    tableHeaderData: "Date",
+    tableHeaderRefeicao: "Meal",
+    tableHeaderNota: "Score",
+    tableHeaderComentario: "Comment",
+    configTitle: "Form Configuration",
+    btnAddStars: "+ Add Question (Stars)",
+    btnAddRadio: "+ Add Question (Options)",
+    
+    // Form Configuration
+    configFieldsTitle: "Questionnaire Fields",
+    configFieldsDesc: "Add, remove, or edit mobile form questions.",
+    btnSaveConfig: "Save Configuration",
+    typeStars: "Stars",
+    typeMulti: "Multiple Choice",
+    labelId: "ID: ",
+    btnDisable: "Disable",
+    btnEnable: "Enable",
+    btnRemove: "Remove",
+    confirmRemoveQuestion: "Remove this question?",
+    btnAddOption: "+ Option",
+    alertConfigSaved: "Configuration saved!",
+    alertConfigError: "Error saving",
+    alertConnectionError: "Connection error",
+    newQuestionLabel: "New Question",
+    newQuestionRadioLabel: "New Question (Options)",
+    btnSave: "Save Configuration",
+    exportExcel: "Export Excel"
   },
   
   es: {
@@ -196,7 +299,65 @@ const translations = {
     language: 'Idioma',
     portuguese: 'Português',
     english: 'English',
-    spanish: 'Español'
+    spanish: 'Español',
+    
+    // Login
+    loginTitle: 'Acceso al Panel',
+    loginSubtitle: 'Ingrese sus credenciales para acceder al panel administrativo',
+    username: 'Usuario:',
+    password: 'Contraseña:',
+    usernamePlaceholder: 'Ingrese su usuario',
+    passwordPlaceholder: 'Ingrese su contraseña',
+    loginButton: 'Entrar',
+    backToSurvey: 'Volver a la',
+    surveyLink: 'Encuesta de Satisfacción',
+    fillAllFields: '⚠️ Por favor, complete todos los campos.',
+    invalidCredentials: '⚠️ Usuario o contraseña inválidos.',
+    
+    // Dark Mode
+    darkModeTitle: 'Alternar Modo Oscuro',
+
+    // Dashboard
+    dashboardTitle: "Panel - Evaluaciones de Cafetería",
+    tabOverview: "Visión General",
+    tabConfig: "Configuración del Formulario",
+    cardClassificacao: "Clasificación General",
+    cardNotas: "Distribución de Puntajes",
+    labelClassificacao: "Clasificación:",
+    labelDataInicio: "Fecha Inicio:",
+    labelDataFim: "Fecha Fin:",
+    btnFiltrar: "Filtrar",
+    btnLimpar: "Limpiar",
+    resumoTotal: "Total de Evaluaciones:",
+    resumoMedia: "Promedio General:",
+    resumoNPS: "NPS Estimado:",
+    tableHeaderData: "Fecha",
+    tableHeaderRefeicao: "Comida",
+    tableHeaderNota: "Nota",
+    tableHeaderComentario: "Comentario",
+    configTitle: "Configuración del Formulario",
+    btnAddStars: "+ Añadir Pregunta (Estrellas)",
+    btnAddRadio: "+ Añadir Pregunta (Opciones)",
+
+    // Configuración del Formulario
+    configFieldsTitle: "Campos del Cuestionario",
+    configFieldsDesc: "Añadir, eliminar o editar preguntas del formulario móvil.",
+    btnSaveConfig: "Guardar Configuración",
+    typeStars: "Estrellas",
+    typeMulti: "Opción Múltiple",
+    labelId: "ID: ",
+    btnDisable: "Desactivar",
+    btnEnable: "Activar",
+    btnRemove: "Eliminar",
+    confirmRemoveQuestion: "¿Eliminar esta pregunta?",
+    btnAddOption: "+ Opción",
+    alertConfigSaved: "¡Configuración guardada!",
+    alertConfigError: "Error al guardar",
+    alertConnectionError: "Error de conexión",
+    newQuestionLabel: "Nueva Pregunta",
+    newQuestionRadioLabel: "Nueva Pregunta (Opciones)",
+    btnSave: "Guardar Configuración",
+    exportExcel: "Exportar Excel"
   }
 };
 
@@ -205,7 +366,14 @@ let currentLanguage = 'pt';
 
 // Função para obter tradução
 function t(key) {
-  return translations[currentLanguage][key] || translations['pt'][key] || key;
+  // Se a chave não existir no idioma atual, tenta em português, senão retorna a própria chave
+  if (translations[currentLanguage] && translations[currentLanguage][key]) {
+      return translations[currentLanguage][key];
+  }
+  if (translations['pt'] && translations['pt'][key]) {
+      return translations['pt'][key];
+  }
+  return key;
 }
 
 // Função para trocar idioma
@@ -252,15 +420,53 @@ function updatePageTexts() {
     element.placeholder = t(key);
   });
   
-  // Atualiza seletor de idioma
+  // Atualiza seletor de idioma (Select antigo)
   const languageSelect = document.getElementById('languageSelect');
   if (languageSelect) {
     languageSelect.value = currentLanguage;
+    languageSelect.setAttribute('aria-label', t('language'));
+    languageSelect.setAttribute('title', t('language'));
   }
+
+  // Atualiza seletor de idioma (Novo estilo Mobile Pill)
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    if (btn.dataset.lang === currentLanguage) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  
+  // Atualiza botão dark mode
+  const darkModeBtn = document.getElementById('darkModeToggle');
+  if (darkModeBtn) {
+    darkModeBtn.title = t('darkModeTitle');
+  }
+}
+
+// ==========================================
+// DARK MODE
+// ==========================================
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('darkMode', isDark);
 }
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
   loadSavedLanguage();
   updatePageTexts();
+  
+  // Inicialização do Dark Mode
+  const isDark = localStorage.getItem('darkMode') === 'true';
+  if (isDark) {
+      document.body.classList.add('dark-mode');
+  }
+  
+  // Listener para o botão de dark mode
+  const darkModeBtn = document.getElementById('darkModeToggle');
+  if (darkModeBtn) {
+      darkModeBtn.addEventListener('click', toggleDarkMode);
+  }
 });

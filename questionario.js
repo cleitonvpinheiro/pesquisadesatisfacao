@@ -138,36 +138,67 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Dados enviados para /questionario:", dadosQuestionario);
 
         // Envia os dados para o servidor
-        // Envia os dados para o servidor
         try {
-            const [resAvaliacao, resQuestionario] = await Promise.all([
-                fetch('http://localhost:3003/avaliar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dadosAvaliacao)
-                }),
-                fetch('http://localhost:3003/questionario', {
+            // Primeiro envia a avaliação simples; se falhar, interrompe
+            const resAvaliacao = await fetch('http://localhost:3003/avaliar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dadosAvaliacao)
+            });
+            if (!resAvaliacao.ok) {
+                throw new Error("Erro ao enviar avaliação inicial.");
+            }
+
+            // Em seguida tenta enviar o questionário detalhado;
+            // caso falhe, apenas registra o erro e segue com o redirecionamento
+            let questionarioOk = true;
+            try {
+                const resQuestionario = await fetch('http://localhost:3003/questionario', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dadosQuestionario)
-                })
-            ]);
+                });
+                if (!resQuestionario.ok) {
+                    questionarioOk = false;
+                    console.warn("Questionário detalhado não foi aceito:", resQuestionario.status);
+                }
+            } catch (errQ) {
+                questionarioOk = false;
+                console.warn("Falha ao enviar questionário detalhado:", errQ);
+            }
 
-            if (!resAvaliacao.ok || !resQuestionario.ok)
-                throw new Error("Erro ao enviar um dos formulários.");
-
+            // Agradece e redireciona independentemente do sucesso do questionário detalhado
             alert(t('thankYouResponse'));
-            
-            // Limpa os dados do localStorage
             localStorage.removeItem("avaliacaoInicial");
-            
-            // Redireciona para a tela inicial
+            // Redireciona imediatamente
+            window.location.href = "./index.html";
+            // Fallback após 1.5s caso o primeiro redirect seja bloqueado
             setTimeout(() => {
-                window.location.href = "./index.html";
+                try {
+                    if (!location.pathname.endsWith("index.html")) {
+                        window.location.replace("./index.html");
+                    }
+                } catch (e) {
+                    // Silencia qualquer erro de navegação
+                }
             }, 1500);
         } catch (err) {
-            console.error("Erro ao enviar:", err);
+            console.error("Erro ao enviar avaliação inicial:", err);
             alert(t('connectionError'));
+            // Redireciona mesmo em caso de erro para evitar travar o fluxo
+            try {
+                localStorage.removeItem("avaliacaoInicial");
+            } catch (_) {}
+            window.location.href = "./index.html";
+            setTimeout(() => {
+                try {
+                    if (!location.pathname.endsWith("index.html")) {
+                        window.location.replace("./index.html");
+                    }
+                } catch (e) {
+                    // Silencia qualquer erro de navegação
+                }
+            }, 1500);
         }
 
     });

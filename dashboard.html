@@ -5,166 +5,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Completo - Refeitório</title>
   <link rel="stylesheet" href="./dashboard.css">
+  <link rel="icon" href="assets/logo.png">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="auth.js"></script>
+  <script src="translations.js"></script>
 </head>
 <body>
+  <header class="main-header">
+    <div class="header-brand">
+        <img src="assets/logo.png" alt="Logo" class="header-logo">
+        <span class="header-app-name">Portal Admin</span>
+    </div>
+    <div class="header-tools">
+        <div id="user-info-display"></div>
+        <div class="divider-vertical"></div>
+        <div class="control-pill">
+            <div class="language-toggle-group">
+                 <button type="button" class="lang-btn" data-lang="pt" onclick="changeLanguage('pt')">PT</button>
+                 <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')">EN</button>
+                 <button type="button" class="lang-btn" data-lang="es" onclick="changeLanguage('es')">ES</button>
+            </div>
+            <div class="divider"></div>
+            <button id="darkModeToggle" class="btn-icon" title="Alternar Modo Escuro" aria-label="Modo Escuro">
+                <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+        </div>
+    </div>
+  </header>
+
   <div class="container">
-    <h1>Dashboard - Avaliações do Refeitório</h1>
+    <div class="header-actions">
+      <h1>Dashboard - Avaliações do Refeitório</h1>
+    </div>
 
-    <div class="graficos">
-      <div class="card">
-        <h3>Classificação Geral</h3>
-        <canvas id="graficoClassificacao"></canvas>
+    <!-- Navegação por Abas -->
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="dashboard-view">Visão Geral</button>
+      <button class="tab-btn" data-tab="config-view">Configuração do Formulário</button>
+    </nav>
+
+    <!-- Conteúdo do Dashboard -->
+    <div id="dashboard-view" class="tab-content active">
+      <div class="graficos">
+        <div class="card">
+          <h3>Classificação Geral</h3>
+          <canvas id="graficoClassificacao"></canvas>
+        </div>
+
+        <div class="card">
+          <h3>Distribuição por Nota Geral</h3>
+          <canvas id="graficoNotas"></canvas>
+        </div>
       </div>
 
-      <div class="card">
-        <h3>Distribuição por Nota Geral</h3>
-        <canvas id="graficoNotas"></canvas>
+      <div class="filtros">
+        <div>
+          <label for="tipoFiltro">Classificação:</label>
+          <select id="tipoFiltro">
+            <option value="">Todos</option>
+            <option value="Excelente">Excelente</option>
+            <option value="Bom">Bom</option>
+            <option value="Ruim">Ruim</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="notaFiltro">Nota:</label>
+          <select id="notaFiltro">
+            <option value="">Todas</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="dataFiltro">Data:</label>
+          <input type="date" id="dataFiltro">
+        </div>
+
+        <div>
+          <button id="btnFiltrar">Filtrar</button>
+          <button id="btnLimpar">Limpar</button>
+          <button id="btnExportar" class="btn-primary">Exportar Excel</button>
+        </div>
+      </div>
+
+      <h2>Sugestões</h2>
+      <ul id="lista-sugestoes"></ul>
+
+      <div class="resumo">
+        <p><span id="label-total">Total de respostas:</span> <span id="total-geral">0</span></p>
+        <p><span id="label-media">Média da nota geral:</span> <span id="media-nota">0</span></p>
+        <p><span id="label-nps">NPS Estimado:</span> <span id="nps-score">0</span></p>
       </div>
     </div>
 
-    <div class="filtros">
-      <div>
-        <label for="tipoFiltro">Classificação:</label>
-        <select id="tipoFiltro">
-          <option value="">Todos</option>
-          <option value="Excelente">Excelente</option>
-          <option value="Bom">Bom</option>
-          <option value="Ruim">Ruim</option>
-        </select>
-      </div>
+    <!-- Conteúdo de Configuração -->
+    <div id="config-view" class="tab-content" style="display: none;">
+      <h2><span data-translate="configTitle">Personalizar Formulário</span></h2>
+      <div class="config-section">
+        <h3><span data-translate="configFieldsTitle">Campos do Questionário</span></h3>
+        <p data-translate="configFieldsDesc">Adicione, remova ou edite as perguntas do formulário móvel.</p>
+        
+        <div class="questions-list" id="questionsList">
+          <!-- Perguntas serão renderizadas aqui via JS -->
+        </div>
 
-      <div>
-        <label for="notaFiltro">Nota:</label>
-        <select id="notaFiltro">
-          <option value="">Todas</option>
-          <option value="0">0</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-          <option value="10">10</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="dataFiltro">Data:</label>
-        <input type="date" id="dataFiltro">
-      </div>
-
-      <div>
-        <button id="btnFiltrar">Filtrar</button>
-        <button id="btnLimpar">Limpar</button>
-        <button id="btnExportar" class="btn-primary">Exportar Excel</button>
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+          <button id="btnAddQuestion" class="btn-secondary" data-translate="btnAddStars">+ Adicionar Pergunta (Estrelas)</button>
+          <button id="btnAddQuestionRadio" class="btn-secondary" data-translate="btnAddRadio">+ Adicionar Pergunta (Opções)</button>
+        </div>
+        
+        <div class="form-actions" style="margin-top: 30px;">
+          <button id="btnSaveConfig" class="btn-primary" data-translate="btnSaveConfig">Salvar Configurações</button>
+        </div>
       </div>
     </div>
 
-    <h2>Sugestões</h2>
-    <ul id="lista-sugestoes"></ul>
-
-    <div class="resumo">
-      <p>Total de respostas: <span id="total-geral">0</span></p>
-      <p>Média da nota geral: <span id="media-nota">0</span></p>
-    </div>
   </div>
 
   <script>
     // Inicializa autenticação antes de carregar o dashboard
     document.addEventListener('DOMContentLoaded', function() {
-      // Mostra loading enquanto verifica autenticação
-      document.body.innerHTML = '<div class="loading">Verificando autenticação...</div>';
-      
       initAuth().then(isAuthenticated => {
         if (isAuthenticated) {
-          // Restaura o conteúdo original e carrega o dashboard
-          document.body.innerHTML = `
-            <div class="container">
-              <h1>Dashboard - Avaliações do Refeitório</h1>
-
-              <div class="graficos">
-                <div class="card">
-                  <h3>Classificação Geral</h3>
-                  <canvas id="graficoClassificacao"></canvas>
-                </div>
-
-                <div class="card">
-                  <h3>Distribuição por Nota Geral</h3>
-                  <canvas id="graficoNotas"></canvas>
-                </div>
-              </div>
-
-              <div class="filtros">
-                <div>
-                  <label for="tipoFiltro">Classificação:</label>
-                  <select id="tipoFiltro">
-                    <option value="">Todos</option>
-                    <option value="Excelente">Excelente</option>
-                    <option value="Bom">Bom</option>
-                    <option value="Ruim">Ruim</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label for="notaFiltro">Nota:</label>
-                  <select id="notaFiltro">
-                    <option value="">Todas</option>
-                    <option value="0">0</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label for="dataFiltro">Data:</label>
-                  <input type="date" id="dataFiltro">
-                </div>
-
-                <div>
-                  <button id="btnFiltrar">Filtrar</button>
-                  <button id="btnLimpar">Limpar</button>
-                  <button id="btnExportar" class="btn-primary">Exportar Excel</button>
-                </div>
-              </div>
-
-              <h2>Sugestões</h2>
-              <ul id="lista-sugestoes"></ul>
-
-              <div class="resumo">
-                <p>Total de respostas: <span id="total-geral">0</span></p>
-                <p>Média da nota geral: <span id="media-nota">0</span></p>
-              </div>
-            </div>
-          `;
-          
-          // Adiciona informações do usuário
-          displayUserInfo();
-          addLogoutButton();
-          
-          // Carrega o script do dashboard
-          const script = document.createElement('script');
-          script.src = './dashboard.js';
-          document.head.appendChild(script);
+          // Carrega dados iniciais se a função existir
+          if (typeof carregarDados === 'function') {
+            carregarDados();
+          }
         }
-      }).catch(error => {
-        console.error('Erro na inicialização:', error);
-        window.location.href = 'login.html';
       });
     });
   </script>
+  <script src="./dashboard.js"></script>
 </body>
 </html>

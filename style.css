@@ -11,6 +11,15 @@ body {
     align-items: center;
     height: 100vh;
     background: #f4f4f4;
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+img {
+    width: 100%;
+    margin-bottom: 20px;
+    height: auto;
+    display: flex;
+    align-items: center;
 }
 
 .container {
@@ -28,41 +37,47 @@ h1 {
     font-size: 22px;
 }
 
-/* Seletor de idioma */
-.language-selector {
-    position: absolute;
+/* Seletor de idioma (Mobile Style Pill) */
+.language-selector-pill {
+    position: fixed; /* Mudado de absolute para fixed para ficar sempre visível */
     top: 20px;
     right: 20px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 4px;
+    border-radius: 25px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    z-index: 1000; /* Aumentado z-index */
 }
 
-.language-selector label {
-    font-size: 14px;
-    font-weight: bold;
-    color: #333;
-}
-
-.language-selector select {
-    padding: 5px 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background: white;
-    font-size: 14px;
+.lang-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: #666;
+    font-weight: 600;
+    font-size: 13px;
     cursor: pointer;
-    transition: border-color 0.3s;
+    transition: all 0.2s ease;
 }
 
-.language-selector select:hover {
-    border-color: #007bff;
+.lang-btn:hover {
+    background: rgba(0,0,0,0.05);
 }
 
-.language-selector select:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+.lang-btn.active {
+    background: #4CAF50;
+    color: white;
+    box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
 }
+
+/* Old selector styles removed/commented */
+/*
+.language-selector { ... }
+*/
 
 .options {
     display: flex;
@@ -79,10 +94,12 @@ h1 {
     font-size: 18px;
     cursor: pointer;
     transition: 0.3s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 .btn:hover {
     transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
 }
 
 .excelente {
@@ -123,4 +140,97 @@ textarea {
     font-size: 14px;
     color: green;
     display: none;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 15px;
+  }
+
+  .container {
+    max-width: 90%;
+    padding: 25px;
+  }
+
+  .btn {
+    font-size: 16px;
+    padding: 16px;
+  }
+
+  .language-selector select {
+    font-size: 14px;
+    padding: 8px 24px 8px 10px;
+  }
+}
+
+/* Smartphones */
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  .container {
+    padding: 20px;
+    max-width: 100%;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .language-selector-pill {
+    top: 10px;
+    right: 10px;
+    padding: 2px;
+  }
+
+  .lang-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  /* Old styles removed
+  .language-selector {
+    flex-direction: center;
+    gap: 5px;
+    margin-bottom: 15px;
+  }
+
+  .language-selector label {
+    font-size: 13px;
+  }
+
+  .language-selector select {
+    width: 35%;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  */
+
+  .options {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+    font-size: 16px;
+    padding: 14px;
+  }
+
+  textarea {
+    height: 70px;
+    font-size: 13px;
+  }
+
+  .enviar {
+    padding: 12px;
+    font-size: 15px;
+  }
+}
+
+/* Telas grandes */
+@media (min-width: 1200px) {
+  .container {
+    max-width: 450px;
+  }
 }

@@ -1,6 +1,6 @@
 # Sistema de Avaliação de Satisfação
 
-Um sistema web completo para coleta e análise de avaliações de satisfação, desenvolvido com foco em segurança e usabilidade.
+Este projeto é um sistema completo para coleta e análise de avaliações de satisfação, composto por um frontend estático e um backend em Node.js.
 
 ## 🚀 Funcionalidades
 
@@ -11,215 +11,124 @@ Um sistema web completo para coleta e análise de avaliações de satisfação, 
 - Exportação de relatórios
 
 ### 🔐 **Sistema de Autenticação**
-- Login seguro com diferentes níveis de acesso
-- Cookies httpOnly para proteção de tokens
-- Sistema de logout com limpeza de sessão
-- Controle de acesso baseado em roles
+- Login seguro com suporte a LDAP e autenticação local
+- Sessões gerenciadas com Cookies `httpOnly`
+- Controle de acesso baseado em roles (Admin, Gestor, Usuário)
+- Rate limiting para proteção contra força bruta
 
 ### 📝 **Formulários de Avaliação**
 - Interface intuitiva para coleta de feedback
-- Validação robusta de dados
-- Suporte a múltiplos idiomas
+- Validação robusta de dados (Joi)
+- Suporte a múltiplos idiomas (Internacionalização)
 - Campos customizáveis
 
-### 🛡️ **Segurança Avançada**
-- Rate limiting para prevenção de ataques
-- Headers de segurança com Helmet
-- Validação de dados com Joi
-- CORS configurado especificamente
-- Logs de auditoria e segurança
-
-## 🏗️ Arquitetura
+## 🏗️ Arquitetura do Projeto
 
 ```
 satisfacao/
-├── backend/           # Servidor Node.js/Express
-│   ├── server.js     # Servidor principal
-│   ├── package.json  # Dependências do backend
-│   └── database.json # Banco de dados local
-├── frontend/         # Interface web
-│   ├── index.html    # Página inicial
-│   ├── login.html    # Página de login
-│   ├── dashboard.html# Dashboard administrativo
-│   └── *.js         # Scripts do frontend
-└── .env             # Variáveis de ambiente
+├── backend/                # Servidor Node.js/Express
+│   ├── server.js           # Ponto de entrada da API
+│   ├── package.json        # Dependências do backend
+│   ├── database.json       # Banco de dados local (JSON)
+│   └── .env                # Variáveis de ambiente do backend
+├── assets/                 # Imagens e recursos estáticos
+├── index.html              # Página inicial (Seleção de satisfação)
+├── formulario-refeitorio.html # Formulário detalhado
+├── login.html              # Página de login administrativo
+├── dashboard.html          # Painel de controle
+├── *.js                    # Lógica do frontend (auth, translations, etc.)
+├── *.css                   # Estilos
+├── package.json            # Scripts de automação da raiz
+└── README.md               # Documentação
 ```
 
-## 🔧 Instalação
+## �️ Tecnologias Utilizadas
+
+### Backend
+- **Node.js** & **Express**: Servidor e API REST.
+- **Security**: `helmet` (Headers HTTP), `cors` (Controle de acesso), `express-rate-limit` (Limitação de requisições).
+- **Authentication**: `passport`, `passport-ldapauth` (Integração LDAP), `bcrypt` (Hash de senhas), `cookie-parser`.
+- **Validation**: `joi` (Validação de schemas).
+- **Database**: `fs-extra` (Persistência em arquivo JSON local).
+
+### Frontend
+- **HTML5/CSS3**: Interface responsiva e moderna.
+- **JavaScript (Vanilla)**: Lógica de interação sem frameworks pesados.
+- **Chart.js**: (Presumido para o dashboard) Visualização de dados.
+- **Fetch API**: Comunicação com o backend.
+
+## ⚙️ Configuração e Instalação
 
 ### Pré-requisitos
-- Node.js (versão 14 ou superior)
-- npm ou yarn
-- Git
+- Node.js (v14+)
+- npm
 
-### Passos de Instalação
+### 1. Instalação
+Na raiz do projeto, execute o comando para instalar as dependências do backend e as ferramentas de desenvolvimento:
 
-1. **Clone o repositório**
 ```bash
-git clone <url-do-repositorio>
-cd satisfacao
-```
-
-2. **Configure as variáveis de ambiente**
-```bash
-# Crie o arquivo .env na raiz do projeto
-cp .env.example .env
-```
-
-3. **Instale as dependências do backend**
-```bash
-cd backend
+npm run setup
 npm install
 ```
 
-4. **Instale as dependências do frontend**
-```bash
-cd ..
-npm install
-```
+### 2. Configuração de Ambiente (.env)
+O backend já possui um arquivo `.env` configurado por padrão na pasta `backend/`. As principais variáveis são:
 
-## ⚙️ Configuração
-
-### Variáveis de Ambiente (.env)
-
-```env
-# Configurações do Servidor
+```ini
 PORT=3003
-NODE_ENV=production
+NODE_ENV=development
 
-# Credenciais de Usuários
+# Credenciais Padrão (Local)
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=senha_segura_admin
+ADMIN_PASSWORD=admin
 GESTOR_USERNAME=gestor
-GESTOR_PASSWORD=senha_segura_gestor
+GESTOR_PASSWORD=gestor
 USUARIO_USERNAME=usuario
-USUARIO_PASSWORD=senha_segura_usuario
+USUARIO_PASSWORD=usuario
 
-# Segurança
-JWT_SECRET=sua_chave_jwt_super_secreta
-SESSION_SECRET=sua_chave_sessao_super_secreta
+# Configurações de Segurança
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
 
-# CORS
-ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+# LDAP (Opcional - Descomente para ativar)
+# LDAP_URL=ldap://example.com
+# LDAP_BIND_DN=...
 ```
 
-## 🚀 Execução
+## 🚀 Como Rodar o Projeto
 
-### Desenvolvimento
-
-1. **Inicie o servidor backend**
-```bash
-cd backend
-node server.js
-```
-
-2. **Inicie o servidor frontend**
-```bash
-# Em outro terminal, na raiz do projeto
-npx http-server -p 8000 -c-1
-```
-
-3. **Acesse a aplicação**
-- Frontend: http://localhost:8000
-- Backend API: http://localhost:3003
-
-### Produção
+Para iniciar o **Frontend** e o **Backend** simultaneamente, utilize o comando:
 
 ```bash
-# Configure NODE_ENV=production no .env
-# Use um processo manager como PM2
-npm install -g pm2
-cd backend
-pm2 start server.js --name "satisfacao-backend"
+npm run dev
 ```
 
-## 🔐 Segurança
+Isso iniciará:
+- **Frontend**: http://localhost:8000
+- **Backend**: http://localhost:3003
 
-### Melhorias Implementadas
+Caso prefira rodar separadamente:
+- Backend: `npm start`
+- Frontend: `npm run start:front`
 
-✅ **Autenticação Segura**
-- Cookies httpOnly para tokens
-- Hashing seguro de senhas com bcrypt
-- Sessões com timeout automático
-
-✅ **Proteção contra Ataques**
-- Rate limiting (máx. 5 tentativas/15min)
-- Headers de segurança (CSP, HSTS, etc.)
-- Validação rigorosa de entrada
-- Sanitização de logs
-
-✅ **Configuração Segura**
-- Variáveis de ambiente para credenciais
-- CORS restritivo por origem
-- Modo de produção otimizado
-
-## 📚 API Endpoints
+## � Documentação da API
 
 ### Autenticação
-```
-POST /login          # Login de usuário
-POST /logout         # Logout e limpeza de sessão
-```
+- `POST /login`: Autentica usuário (Local ou LDAP).
+- `POST /logout`: Encerra a sessão.
+- `GET /verify-auth`: Verifica se o token atual é válido.
 
 ### Avaliações
-```
-POST /avaliar        # Submeter nova avaliação
-GET /avaliacoes      # Listar avaliações (autenticado)
-GET /estatisticas    # Obter estatísticas (autenticado)
-```
+- `POST /avaliar`: Envia uma avaliação simplificada (Excelente/Bom/Ruim).
+- `POST /questionario`: Envia o questionário completo.
+- `GET /avaliacoes`: Lista avaliações (Requer autenticação).
+- `GET /questionarios`: Lista questionários detalhados (Requer autenticação).
+- `GET /estatisticas`: Retorna métricas consolidadas (Requer autenticação).
 
-### Dados
-```
-GET /dados-dashboard # Dados para dashboard (autenticado)
-```
+## 🔒 Segurança
 
-## 🧪 Testes
-
-### Testes de Segurança
-
-```bash
-# Teste de rate limiting
-curl -X POST http://localhost:3003/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"invalid","password":"invalid"}'
-
-# Teste de CORS
-curl -X OPTIONS http://localhost:3003/login \
-  -H "Origin: http://localhost:8000" \
-  -H "Access-Control-Request-Method: POST"
-
-# Teste de validação
-curl -X POST http://localhost:3003/avaliar \
-  -H "Content-Type: application/json" \
-  -d '{"avaliacao":"invalido","notaGeral":15}'
-```
-
-## 🤝 Contribuição
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
-
-## 🆘 Suporte
-
-Para suporte e dúvidas:
-- Abra uma issue no GitHub
-- Entre em contato com a equipe de desenvolvimento
-
-## 📈 Roadmap
-
-- [ ] Implementação de testes automatizados
-- [ ] Dashboard com mais métricas
-- [ ] Integração com banco de dados externo
-- [ ] API REST completa
-- [ ] Aplicativo mobile
-
----
-
-**Desenvolvido com ❤️ para melhorar a experiência do usuário**
+O sistema implementa diversas camadas de segurança:
+1. **Cookies Seguros**: Tokens armazenados em cookies `httpOnly` e `SameSite=Strict`.
+2. **CORS Restrito**: Apenas origens permitidas podem acessar a API.
+3. **Sanitização**: Validação rigorosa de entrada com `Joi`.
+4. **Rate Limiting**: Proteção contra ataques de força bruta no login.

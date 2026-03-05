@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Satisfação</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/logo.png">
+    <script src="translations.js"></script>
+</head>
+<body>
+    <!-- Seletor de idioma (Mobile Style Pill) -->
+    <div class="language-selector-pill">
+        <button type="button" class="lang-btn" data-lang="pt" onclick="changeLanguage('pt')">PT</button>
+        <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')">EN</button>
+        <button type="button" class="lang-btn" data-lang="es" onclick="changeLanguage('es')">ES</button>
+    </div>
+
+    <div class="container">
+        <img src="./assets/logo.png" alt="Logo Familia Madalosso">
+        
+        <h1  data-translate="mainTitle">Avalie nosso Refeitório</h1>
+
+        <div class="options">
+            <button type="button" class="btn excelente" data-value="excelente">
+                😊 <span data-translate="excellent">Excelente</span>
+            </button>
+            <button type="button" class="btn bom" data-value="bom">
+                😃 <span data-translate="good">Bom</span>
+            </button>
+            <button type="button" class="btn ruim" data-value="ruim">
+                😞 <span data-translate="bad">Ruim</span>
+            </button>
+        </div>
+
+        <button type="button" id="enviar" class="btn enviar" data-translate="answerSurvey">Responder Pesquisa</button> <br>
+
+        <!-- <p id="mensagem" class="mensagem"></p>
+
+        <p style="text-align: center; margin-top: 20px;">
+            <a href="formulario-refeitorio.html" style="color: #007bff; text-decoration: none;"></a>
+        </p> -->
+    </div>
+    
+    <script src="satisfacao.js"></script>
+
+</body>
+</html>

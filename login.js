@@ -29,7 +29,7 @@ function handleLogin(event) {
     
     // Validação básica
     if (!username || !password) {
-        showError(t('fillAllFields'));
+        showError(t('Usuário ou senha invalido'));
         return;
     }
     
@@ -49,7 +49,9 @@ function handleLogin(event) {
         })
         .catch(error => {
             console.error('Erro na autenticação:', error);
-            showError(t('connectionError'));
+            // Mostra a mensagem de erro real se disponível, caso contrário erro de conexão
+            const msg = error.message && error.message !== 'Failed to fetch' ? error.message : t('connectionError');
+            showError(msg);
         });
 }
 
@@ -62,15 +64,18 @@ function authenticateUser(username, password) {
         },
         body: JSON.stringify({ username, password })
     })
-    .then(response => {
+    .then(async response => {
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            // Tenta ler a mensagem de erro do servidor
+            try {
+                const data = await response.json();
+                throw new Error(data.message || data.error || `Erro ${response.status}`);
+            } catch (e) {
+                if (e.message && e.message !== 'Unexpected end of JSON input') throw e;
+                throw new Error(`Erro do servidor: ${response.status}`);
+            }
         }
         return response.json();
-    })
-    .catch(error => {
-        console.error('Erro na requisição:', error);
-        throw new Error(t('connectionError'));
     });
 }
 
@@ -92,6 +97,25 @@ function verifyToken() {
     })
     .catch(() => false);
 }
+
+// ==========================================
+// DARK MODE
+// ==========================================
+// Função toggleDarkMode agora está no translations.js
+// function toggleDarkMode() { ... }
+
+// Função updateDarkModeIcon removida ou comentada pois o controle é via CSS
+// function updateDarkModeIcon(isDark) {
+//    const btn = document.getElementById('darkModeToggle');
+//    if (btn) {
+//        btn.textContent = isDark ? '☀️' : '🌙';
+//    }
+// }
+
+// Inicialização do tema
+document.addEventListener('DOMContentLoaded', () => {
+    // Verificar preferência salva e listeners de dark mode agora são gerenciados pelo translations.js
+});
 
 // Função para verificar se o usuário está logado
 function isLoggedIn() {
