@@ -6,7 +6,9 @@ Este projeto é um sistema completo para coleta e análise de avaliações de sa
 
 ### 📊 **Dashboard Administrativo**
 - **Visualização em Tempo Real**: Estatísticas e gráficos interativos de satisfação.
-- **Configuração de Questionário**: Interface para adicionar, remover e editar perguntas do formulário dinamicamente.
+- **Configuração de Questionário**: Interface para adicionar, remover e editar perguntas do formulário dinamicamente (Acesso para Admin e Gestor).
+- **Gestão de Usuários**: Sistema completo para criação, edição e remoção de usuários com validação robusta.
+- **Filtros Avançados**: Interface aprimorada com botões intuitivos para filtragem e exportação de dados.
 - **Gestão de Idiomas**: Interface traduzida para Português, Inglês e Espanhol.
 - **Temas**: Suporte a modo claro e escuro.
 
