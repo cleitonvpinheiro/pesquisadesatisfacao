@@ -77,6 +77,42 @@ function getUserInfo() {
     return userInfo ? JSON.parse(userInfo) : null;
 }
 
+// Função para verificar se o usuário tem um papel específico
+function hasRole(role) {
+    const user = getUserInfo();
+    return user && user.role === role;
+}
+
+// Função para verificar se o usuário é administrador
+function isAdmin() {
+    const user = getUserInfo();
+    return user && user.role === 'admin';
+}
+
+// Função para verificar se o usuário é gestor
+function isManager() {
+    const user = getUserInfo();
+    return user && user.role === 'manager';
+}
+
+// Função para verificar permissão baseada em hierarquia (Admin > Manager > User)
+function hasPermission(requiredRole) {
+    const user = getUserInfo();
+    if (!user) return false;
+    
+    const roles = {
+        'admin': 3,
+        'manager': 2,
+        'user': 1,
+        'ldap_user': 1
+    };
+    
+    const userLevel = roles[user.role] || 0;
+    const requiredLevel = roles[requiredRole] || 0;
+    
+    return userLevel >= requiredLevel;
+}
+
 // Função para fazer requisições autenticadas
 function authenticatedFetch(url, options = {}) {
     const token = localStorage.getItem('authToken');
@@ -98,88 +134,19 @@ function authenticatedFetch(url, options = {}) {
         .then(response => {
             if (response.status === 401) {
                 redirectToLogin();
-                throw new Error('Token inválido');
+                throw new Error('Não autorizado');
             }
             return response;
         });
 }
 
-// Inicialização da autenticação
-function initAuth() {
-    return checkAuth().then(isAuthenticated => {
-        if (isAuthenticated) {
-            // Adiciona informações do usuário na interface
-            displayUserInfo();
-            // Adiciona botão de logout
-            addLogoutButton();
-        }
-        return isAuthenticated;
-    });
-}
-
-// Função para exibir informações do usuário
-function displayUserInfo() {
-    const userInfo = getUserInfo();
-    if (userInfo) {
-        // Opção 1: Exibir no Header (Novo Layout)
-        const headerDisplay = document.getElementById('user-info-display');
-        if (headerDisplay) {
-            headerDisplay.innerHTML = `
-                <div class="header-user-profile">
-                    <span class="user-name">${userInfo.username}</span>
-                    <span class="user-role-badge">${userInfo.role}</span>
-                    <button id="logout-btn-header" class="btn-logout-icon" title="Sair">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                    </button>
-                </div>
-            `;
-            // Adiciona listener ao novo botão
-            const btn = document.getElementById('logout-btn-header');
-            if(btn) btn.addEventListener('click', logout);
-            return;
-        }
-
-        // Opção 2: Fallback (Layout Antigo)
-        // Cria elemento de informações do usuário se não existir
-        let userInfoElement = document.getElementById('user-info');
-        if (!userInfoElement) {
-            userInfoElement = document.createElement('div');
-            userInfoElement.id = 'user-info';
-            userInfoElement.className = 'user-info';
-            
-            // Insere no início do container
-            const container = document.querySelector('.container');
-            if (container) {
-                container.insertBefore(userInfoElement, container.firstChild);
-            } else {
-                // Fallback: adiciona ao body se não encontrar container
-                document.body.insertBefore(userInfoElement, document.body.firstChild);
-            }
-        }
-        
-        userInfoElement.innerHTML = `
-            <div class="user-welcome">
-                <span>Bem-vindo, <strong>${userInfo.username}</strong> (${userInfo.role})</span>
-                <button id="logout-btn" class="btn-logout">Sair</button>
-            </div>
-        `;
-        
-        // Adiciona listener ao botão antigo
-        addLogoutButton();
-    }
-}
-
-// Função para adicionar botão de logout
-function addLogoutButton() {
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
-    }
-}
-
-// Exporta as funções para uso global
+// Expor funções globalmente
 window.checkAuth = checkAuth;
+window.initAuth = checkAuth; // Alias para compatibilidade
 window.logout = logout;
 window.getUserInfo = getUserInfo;
+window.hasRole = hasRole;
+window.isAdmin = isAdmin;
+window.isManager = isManager;
+window.hasPermission = hasPermission;
 window.authenticatedFetch = authenticatedFetch;
-window.initAuth = initAuth;

@@ -55,6 +55,12 @@ const translations = {
     thankYouResponse: '✅ Obrigado pela sua resposta!',
     connectionError: '🚫 Erro de conexão com o servidor.',
     
+    // Roles
+    admin: 'Administrador',
+    manager: 'Gestor',
+    user: 'Usuário',
+    logout: 'Sair',
+    
     // Login
     loginTitle: 'Acesso ao Dashboard',
     loginSubtitle: 'Entre com suas credenciais para acessar o painel administrativo',
@@ -81,6 +87,7 @@ const translations = {
     dashboardTitle: "Dashboard - Avaliações do Refeitório",
     tabOverview: "Visão Geral",
     tabConfig: "Configuração do Formulário",
+    tabUsers: "Gerenciar Usuários",
     cardClassificacao: "Classificação Geral",
     cardNotas: "Distribuição por Nota Geral",
     labelClassificacao: "Classificação:",
@@ -96,6 +103,7 @@ const translations = {
     tableHeaderNota: "Nota",
     tableHeaderComentario: "Comentário",
     configTitle: "Personalizar Formulário",
+    usersTitle: "Gerenciar Usuários",
     btnAddStars: "+ Adicionar Pergunta (Estrelas)",
     btnAddRadio: "+ Adicionar Pergunta (Opções)",
     
@@ -116,8 +124,31 @@ const translations = {
     alertConnectionError: "Erro de conexão",
     newQuestionLabel: "Nova Pergunta",
     newQuestionRadioLabel: "Nova Pergunta (Opções)",
-    btnSave: "Salvar Configurações",
-    exportExcel: "Exportar Excel"
+    btnSave: "Salvar",
+    exportExcel: "Exportar Excel",
+
+    // User Management
+    btnNewUser: "+ Novo Usuário",
+    userTableUser: "Usuário",
+    userTableRole: "Função",
+    userTableOrigin: "Origem",
+    userTableActions: "Ações",
+    modalNewUser: "Novo Usuário",
+    modalEditUser: "Editar Usuário",
+    labelUsername: "Usuário",
+    labelPassword: "Senha",
+    labelRole: "Função",
+    roleUser: "Usuário",
+    roleManager: "Gestor",
+    roleAdmin: "Administrador",
+    passwordHelp: "Deixe em branco para manter a atual",
+    btnCancel: "Cancelar",
+    confirmDeleteUser: "Tem certeza que deseja excluir este usuário?",
+    alertUserSaved: "Usuário salvo com sucesso!",
+    alertUserDeleted: "Usuário excluído com sucesso!",
+    alertUserError: "Erro ao salvar usuário",
+    originDB: "Banco de Dados",
+    originEnv: "Variável de Ambiente"
   },
   
   en: {
@@ -184,6 +215,12 @@ const translations = {
     // Dark Mode
     darkModeTitle: 'Toggle Dark Mode',
     
+    // Roles
+    admin: 'Administrator',
+    manager: 'Manager',
+    user: 'User',
+    logout: 'Logout',
+    
     // Login
     loginTitle: 'Dashboard Access',
     loginSubtitle: 'Enter your credentials to access the administrative panel',
@@ -198,31 +235,33 @@ const translations = {
     invalidCredentials: '⚠️ Invalid username or password.',
 
     // Dashboard
-    dashboardTitle: "Dashboard - Cafeteria Reviews",
+    dashboardTitle: "Dashboard - Cafeteria Evaluations",
     tabOverview: "Overview",
     tabConfig: "Form Configuration",
+    tabUsers: "Manage Users",
     cardClassificacao: "General Classification",
-    cardNotas: "Score Distribution",
+    cardNotas: "Distribution by Overall Rating",
     labelClassificacao: "Classification:",
     labelDataInicio: "Start Date:",
     labelDataFim: "End Date:",
     btnFiltrar: "Filter",
     btnLimpar: "Clear",
-    resumoTotal: "Total Reviews:",
-    resumoMedia: "Average Score:",
+    resumoTotal: "Total responses:",
+    resumoMedia: "Average overall rating:",
     resumoNPS: "Estimated NPS:",
     tableHeaderData: "Date",
     tableHeaderRefeicao: "Meal",
-    tableHeaderNota: "Score",
+    tableHeaderNota: "Rating",
     tableHeaderComentario: "Comment",
-    configTitle: "Form Configuration",
+    configTitle: "Customize Form",
+    usersTitle: "Manage Users",
     btnAddStars: "+ Add Question (Stars)",
     btnAddRadio: "+ Add Question (Options)",
     
     // Form Configuration
     configFieldsTitle: "Questionnaire Fields",
     configFieldsDesc: "Add, remove, or edit mobile form questions.",
-    btnSaveConfig: "Save Configuration",
+    btnSaveConfig: "Save Settings",
     typeStars: "Stars",
     typeMulti: "Multiple Choice",
     labelId: "ID: ",
@@ -231,13 +270,36 @@ const translations = {
     btnRemove: "Remove",
     confirmRemoveQuestion: "Remove this question?",
     btnAddOption: "+ Option",
-    alertConfigSaved: "Configuration saved!",
+    alertConfigSaved: "Settings saved!",
     alertConfigError: "Error saving",
     alertConnectionError: "Connection error",
     newQuestionLabel: "New Question",
     newQuestionRadioLabel: "New Question (Options)",
-    btnSave: "Save Configuration",
-    exportExcel: "Export Excel"
+    btnSave: "Save",
+    exportExcel: "Export Excel",
+
+    // User Management
+    btnNewUser: "+ New User",
+    userTableUser: "User",
+    userTableRole: "Role",
+    userTableOrigin: "Origin",
+    userTableActions: "Actions",
+    modalNewUser: "New User",
+    modalEditUser: "Edit User",
+    labelUsername: "Username",
+    labelPassword: "Password",
+    labelRole: "Role",
+    roleUser: "User",
+    roleManager: "Manager",
+    roleAdmin: "Administrator",
+    passwordHelp: "Leave blank to keep current",
+    btnCancel: "Cancel",
+    confirmDeleteUser: "Are you sure you want to delete this user?",
+    alertUserSaved: "User saved successfully!",
+    alertUserDeleted: "User deleted successfully!",
+    alertUserError: "Error saving user",
+    originDB: "Database",
+    originEnv: "Environment Variable"
   },
   
   es: {
@@ -301,6 +363,12 @@ const translations = {
     english: 'English',
     spanish: 'Español',
     
+    // Roles
+    admin: 'Administrador',
+    manager: 'Gerente',
+    user: 'Usuario',
+    logout: 'Salir',
+    
     // Login
     loginTitle: 'Acceso al Panel',
     loginSubtitle: 'Ingrese sus credenciales para acceder al panel administrativo',
@@ -357,7 +425,30 @@ const translations = {
     newQuestionLabel: "Nueva Pregunta",
     newQuestionRadioLabel: "Nueva Pregunta (Opciones)",
     btnSave: "Guardar Configuración",
-    exportExcel: "Exportar Excel"
+    exportExcel: "Exportar Excel",
+
+    // Gestión de Usuarios
+    btnNewUser: "+ Nuevo Usuario",
+    userTableUser: "Usuario",
+    userTableRole: "Rol",
+    userTableOrigin: "Origen",
+    userTableActions: "Acciones",
+    modalNewUser: "Nuevo Usuario",
+    modalEditUser: "Editar Usuario",
+    labelUsername: "Usuario",
+    labelPassword: "Contraseña",
+    labelRole: "Rol",
+    roleUser: "Usuario",
+    roleManager: "Gerente",
+    roleAdmin: "Administrador",
+    passwordHelp: "Dejar en blanco para mantener la actual",
+    btnCancel: "Cancelar",
+    confirmDeleteUser: "¿Está seguro de que desea eliminar este usuario?",
+    alertUserSaved: "¡Usuario guardado con éxito!",
+    alertUserDeleted: "¡Usuario eliminado con éxito!",
+    alertUserError: "Error al guardar usuario",
+    originDB: "Base de Datos",
+    originEnv: "Variable de Entorno"
   }
 };
 

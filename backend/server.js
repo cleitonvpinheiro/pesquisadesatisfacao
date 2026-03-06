@@ -144,9 +144,10 @@ async function getDB() {
         const data = await fs.readJson(DB_File)
         if (!data.avaliacoes) data.avaliacoes = []
         if (!data.questionarios) data.questionarios = []
+        if (!data.users) data.users = []
         return data
     } catch {
-        return { avaliacoes: [], questionarios: [] }
+        return { avaliacoes: [], questionarios: [], users: [] }
     }
 }
 
@@ -235,7 +236,7 @@ app.get('/events', (req, res) => {
 });
 
 // 🔐 Rotas de autenticação
-app.post("/login", authLimiter, (req, res, next) => {
+app.post("/login", authLimiter, async (req, res, next) => {
   // 🔹 Validação básica com Joi
   const { error, value } = loginSchema.validate(req.body)
   if (error) {
@@ -252,40 +253,21 @@ app.post("/login", authLimiter, (req, res, next) => {
     : originalUsername.split('@')[0]
   value.username = normalizedUsername
 
-  if (ldapEnabled) {
-    passport.authenticate("ldapauth", { session: false }, (err, user, info) => {
-      if (err) {
-        console.error("Erro LDAP:", err)
-        return res.status(500).json({ success: false, message: "Erro interno no LDAP" })
-      }
-
-      // 🔹 Se o usuário não foi encontrado no LDAP, tenta autenticação local
-      if (!user) {
-        const localUser = validUsers.find(
-          u => u.username === value.username && u.password === value.password
-        )
-        if (!localUser) {
-          console.warn(`Tentativa de login inválida: ${value.username}`)
-          return res.status(401).json({ success: false, message: "Usuário e senha inválidos." })
-        }
-        user = localUser
-      }
-
-      // 🔑 Gera token de sessão (mesma lógica atual)
+  // Função auxiliar para criar sessão
+  const createSession = (user) => {
       const token = generateToken()
       const expires = Date.now() + (24 * 60 * 60 * 1000) // 24h
 
       sessions.set(token, {
         user: {
-          username: user.sAMAccountName || user.uid || user.username,
-          role: user.role || "ldap_user"
+          username: user.username,
+          role: user.role
         },
         expires,
         createdAt: Date.now(),
         lastAccess: Date.now()
       })
 
-      // 🔸 Define cookie seguro
       res.cookie("authToken", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -293,55 +275,55 @@ app.post("/login", authLimiter, (req, res, next) => {
         maxAge: 24 * 60 * 60 * 1000
       })
 
-      console.log(`Login bem-sucedido para: ${value.username} (${user.role || "ldap_user"})`)
+      console.log(`Login bem-sucedido para: ${user.username} (${user.role})`)
       res.json({
         success: true,
         token,
         user: {
-          username: user.sAMAccountName || user.uid || user.username,
-          role: user.role || "ldap_user"
+          username: user.username,
+          role: user.role
         }
       })
+  }
+
+  // 1. Tenta autenticação no banco de dados local (users.json)
+  const db = await getDB()
+  const dbUser = db.users.find(u => u.username === value.username && u.password === value.password)
+  
+  if (dbUser) {
+      return createSession(dbUser)
+  }
+
+  // 2. Tenta autenticação com usuários de ambiente (fallback)
+  const envUser = validUsers.find(u => u.username === value.username && u.password === value.password)
+  if (envUser) {
+      return createSession(envUser)
+  }
+
+  // 3. Tenta autenticação LDAP se habilitado
+  if (ldapEnabled) {
+    passport.authenticate("ldapauth", { session: false }, (err, user, info) => {
+      if (err) {
+        console.error("Erro LDAP:", err)
+        return res.status(500).json({ success: false, message: "Erro interno no LDAP" })
+      }
+
+      if (!user) {
+        console.warn(`Tentativa de login inválida: ${value.username}`)
+        return res.status(401).json({ success: false, message: "Usuário e senha inválidos." })
+      }
+
+      // Se passou no LDAP, cria sessão como ldap_user (ou mapeia role se necessário)
+      createSession({
+          username: user.sAMAccountName || user.uid || user.username,
+          role: user.role || "ldap_user"
+      })
+
     })(req, res, next)
   } else {
-    // 🔹 LDAP desativado: autenticação somente local
-    const localUser = validUsers.find(
-      u => u.username === value.username && u.password === value.password
-    )
-    if (!localUser) {
-      console.warn(`Tentativa de login inválida: ${value.username}`)
-      return res.status(401).json({ success: false, message: "Usuário e senha inválidos." })
-    }
-
-    const token = generateToken()
-    const expires = Date.now() + (24 * 60 * 60 * 1000) // 24h
-
-    sessions.set(token, {
-      user: {
-        username: localUser.username,
-        role: localUser.role
-      },
-        expires,
-        createdAt: Date.now(),
-        lastAccess: Date.now()
-    })
-
-    res.cookie("authToken", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1000
-    })
-
-    console.log(`Login bem-sucedido (local) para: ${value.username} (${localUser.role})`)
-    res.json({
-      success: true,
-      token,
-      user: {
-        username: localUser.username,
-        role: localUser.role
-      }
-    })
+    // Se chegou aqui e não achou em lugar nenhum
+    console.warn(`Tentativa de login inválida: ${value.username}`)
+    return res.status(401).json({ success: false, message: "Usuário e senha inválidos." })
   }
 })
 
@@ -509,7 +491,7 @@ app.get("/config/form", async (req, res) => {
     }
 });
 
-app.post("/config/form", requireAuth, async (req, res) => {
+app.post("/config/form", requireAuth, requireManagerOrAdmin, async (req, res) => {
     try {
         const { questions } = req.body;
         
@@ -525,6 +507,147 @@ app.post("/config/form", requireAuth, async (req, res) => {
     } catch (error) {
         console.error("Erro ao salvar config:", error);
         res.status(500).json({ error: "Erro ao salvar configuração" });
+    }
+});
+
+// Middleware para verificar permissão de admin
+function requireAdmin(req, res, next) {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+    }
+}
+
+// Middleware para verificar permissão de admin ou gestor
+function requireManagerOrAdmin(req, res, next) {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'manager')) {
+        next();
+    } else {
+        res.status(403).json({ error: 'Acesso negado. Apenas administradores e gestores.' });
+    }
+}
+
+// 👥 Rotas de Gerenciamento de Usuários
+app.get("/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const db = await getDB();
+        // Retorna usuários do banco + usuários de ambiente (marcados como tal)
+        const dbUsers = db.users.map(u => ({ ...u, origin: 'database' }));
+        const envUsers = validUsers.map(u => ({ ...u, origin: 'env', id: 'env_' + u.username }));
+        
+        // Combina as listas
+        const allUsers = [...dbUsers, ...envUsers];
+        
+        // Remove senhas antes de enviar
+        const safeUsers = allUsers.map(({ password, ...user }) => user);
+        
+        res.json(safeUsers);
+    } catch (error) {
+        console.error("Erro ao listar usuários:", error);
+        res.status(500).json({ error: "Erro interno ao listar usuários" });
+    }
+});
+
+app.post("/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const schema = Joi.object({
+            username: Joi.string().min(3).required(),
+            password: Joi.string().min(3).required(),
+            role: Joi.string().valid('admin', 'manager', 'user').required()
+        });
+
+        const { error, value } = schema.validate(req.body);
+        if (error) return res.status(400).json({ error: error.details[0].message });
+
+        const db = await getDB();
+        
+        // Verifica se usuário já existe (no DB ou Env)
+        if (db.users.some(u => u.username === value.username) || 
+            validUsers.some(u => u.username === value.username)) {
+            return res.status(400).json({ error: "Usuário já existe" });
+        }
+
+        const newUser = {
+            id: Date.now().toString(),
+            username: value.username,
+            password: value.password, // Em produção, usar bcrypt hash!
+            role: value.role,
+            createdAt: new Date().toISOString()
+        };
+
+        db.users.push(newUser);
+        await saveDB(db);
+
+        const { password, ...safeUser } = newUser;
+        res.status(201).json(safeUser);
+    } catch (error) {
+        console.error("Erro ao criar usuário:", error);
+        res.status(500).json({ error: "Erro interno ao criar usuário" });
+    }
+});
+
+app.put("/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const schema = Joi.object({
+            username: Joi.string().min(3),
+            password: Joi.string().min(3),
+            role: Joi.string().valid('admin', 'manager', 'user')
+        });
+
+        const { error, value } = schema.validate(req.body);
+        if (error) return res.status(400).json({ error: error.details[0].message });
+
+        // Não permite editar usuários de ambiente
+        if (id.startsWith('env_')) {
+            return res.status(403).json({ error: "Não é possível editar usuários de ambiente via interface." });
+        }
+
+        const db = await getDB();
+        const userIndex = db.users.findIndex(u => u.id === id);
+
+        if (userIndex === -1) {
+            return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+
+        // Atualiza campos
+        if (value.username) db.users[userIndex].username = value.username;
+        if (value.password) db.users[userIndex].password = value.password;
+        if (value.role) db.users[userIndex].role = value.role;
+
+        await saveDB(db);
+
+        const { password, ...safeUser } = db.users[userIndex];
+        res.json(safeUser);
+    } catch (error) {
+        console.error("Erro ao atualizar usuário:", error);
+        res.status(500).json({ error: "Erro interno ao atualizar usuário" });
+    }
+});
+
+app.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Não permite deletar usuários de ambiente
+        if (id.startsWith('env_')) {
+            return res.status(403).json({ error: "Não é possível excluir usuários de ambiente via interface." });
+        }
+
+        const db = await getDB();
+        const initialLength = db.users.length;
+        db.users = db.users.filter(u => u.id !== id);
+
+        if (db.users.length === initialLength) {
+            return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+
+        await saveDB(db);
+        res.json({ message: "Usuário removido com sucesso" });
+    } catch (error) {
+        console.error("Erro ao excluir usuário:", error);
+        res.status(500).json({ error: "Erro interno ao excluir usuário" });
     }
 });
 

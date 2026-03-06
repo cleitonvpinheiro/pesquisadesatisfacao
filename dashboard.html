@@ -42,8 +42,9 @@
 
     <!-- Navegação por Abas -->
     <nav class="tabs">
-      <button class="tab-btn active" data-tab="dashboard-view">Visão Geral</button>
-      <button class="tab-btn" data-tab="config-view">Configuração do Formulário</button>
+      <button class="tab-btn active" data-tab="dashboard-view" data-translate="tabOverview">Visão Geral</button>
+      <button class="tab-btn" data-tab="config-view" data-translate="tabConfig">Configuração do Formulário</button>
+      <button class="tab-btn" data-tab="users-view" id="tab-users" style="display: none;" data-translate="tabUsers">Gerenciar Usuários</button>
     </nav>
 
     <!-- Conteúdo do Dashboard -->
@@ -94,10 +95,19 @@
           <input type="date" id="dataFiltro">
         </div>
 
-        <div>
-          <button id="btnFiltrar">Filtrar</button>
-          <button id="btnLimpar">Limpar</button>
-          <button id="btnExportar" class="btn-primary">Exportar Excel</button>
+        <div class="acoes-filtro">
+          <button id="btnFiltrar" class="btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            Filtrar
+          </button>
+          <button id="btnLimpar" class="btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            Limpar
+          </button>
+          <button id="btnExportar" class="btn-success">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+            Exportar
+          </button>
         </div>
       </div>
 
@@ -133,6 +143,60 @@
       </div>
     </div>
 
+    <!-- Conteúdo de Gestão de Usuários -->
+    <div id="users-view" class="tab-content" style="display: none;">
+      <h2><span data-translate="usersTitle">Gerenciar Usuários</span></h2>
+      <button id="btnNewUser" class="btn-primary" style="margin-bottom: 20px;" data-translate="btnNewUser">+ Novo Usuário</button>
+      
+      <div class="table-responsive">
+        <table id="usersTable" class="data-table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th data-translate="userTableUser">Usuário</th>
+              <th data-translate="userTableRole">Função</th>
+              <th data-translate="userTableOrigin">Origem</th>
+              <th data-translate="userTableActions">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Users will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal for User Form -->
+    <div id="userModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3 id="modalTitle" data-translate="modalNewUser">Novo Usuário</h3>
+        <form id="userForm">
+          <input type="hidden" id="userId">
+          <div class="form-group">
+            <label for="username" data-translate="labelUsername">Usuário</label>
+            <input type="text" id="username" name="username" required>
+          </div>
+          <div class="form-group">
+            <label for="password" data-translate="labelPassword">Senha</label>
+            <input type="password" id="password" name="password">
+            <small id="passwordHelp" style="display:none;" data-translate="passwordHelp">Deixe em branco para manter a atual</small>
+          </div>
+          <div class="form-group">
+            <label for="role" data-translate="labelRole">Função</label>
+            <select id="role" name="role" required>
+              <option value="user" data-translate="roleUser">Usuário</option>
+              <option value="manager" data-translate="roleManager">Gestor</option>
+              <option value="admin" data-translate="roleAdmin">Administrador</option>
+            </select>
+          </div>
+          <div class="form-actions" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" id="btnCancelUser" class="btn-secondary close-modal-btn" data-translate="btnCancel">Cancelar</button>
+            <button type="submit" id="btnSaveUser" class="btn-primary" data-translate="btnSave">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -140,6 +204,11 @@
     document.addEventListener('DOMContentLoaded', function() {
       initAuth().then(isAuthenticated => {
         if (isAuthenticated) {
+          // Aplica permissões de interface
+          if (typeof applyPermissions === 'function') {
+            applyPermissions();
+          }
+          
           // Carrega dados iniciais se a função existir
           if (typeof carregarDados === 'function') {
             carregarDados();

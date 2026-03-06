@@ -283,6 +283,77 @@ function exportarParaExcel() {
   XLSX.writeFile(wb, nomeArquivo);
 }
 
+// Função para aplicar permissões baseadas no papel do usuário
+function applyPermissions() {
+    const user = getUserInfo();
+    if (!user) return;
+
+    // Exibir informações do usuário
+    const userInfoDisplay = document.getElementById('user-info-display');
+    if (userInfoDisplay) {
+        // Mapa de roles para chaves de tradução
+        const roleMap = {
+            'admin': 'roleAdmin',
+            'manager': 'roleManager',
+            'user': 'roleUser'
+        };
+        // Tenta traduzir o papel usando o mapa, ou usa o original
+        const roleKey = roleMap[user.role] || user.role;
+        const roleName = (typeof t === 'function' ? t(roleKey) : user.role) || user.role;
+        const logoutText = (typeof t === 'function' ? t('logout') : 'Sair');
+        
+        userInfoDisplay.innerHTML = `
+            <div class="header-user-profile">
+                <div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;">
+                    <span class="user-name">${user.username}</span>
+                    <span class="user-role-badge" style="font-size: 0.75rem; padding: 1px 6px; background-color: var(--cor-primaria); color: white; border-radius: 4px;">${roleName}</span>
+                </div>
+                <button onclick="logout()" class="btn-logout-icon" title="${logoutText}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
+        `;
+    }
+
+    // Permissões para Configuração (Admin ou Gestor)
+    if (!isAdmin() && !isManager()) {
+        const configTab = document.querySelector('.tab-btn[data-tab="config-view"]');
+        if (configTab) configTab.style.display = 'none';
+        
+        const configView = document.getElementById('config-view');
+        if (configView) configView.remove();
+    } else {
+        const configTab = document.querySelector('.tab-btn[data-tab="config-view"]');
+        if (configTab) configTab.style.display = 'block';
+    }
+
+    // Permissões para Gerenciamento de Usuários (Apenas Admin)
+    if (!isAdmin()) {
+        const usersTab = document.querySelector('.tab-btn[data-tab="users-view"]');
+        if (usersTab) usersTab.style.display = 'none';
+        
+        const usersView = document.getElementById('users-view');
+        if (usersView) usersView.remove();
+    } else {
+        // Mostrar aba de usuários para admins
+        const usersTab = document.querySelector('.tab-btn[data-tab="users-view"]');
+        if (usersTab) usersTab.style.display = 'block';
+        
+        // Configurar event listener para a aba de usuários
+        if (usersTab && !usersTab.hasAttribute('data-initialized')) {
+            usersTab.setAttribute('data-initialized', 'true');
+            usersTab.addEventListener('click', loadUsers);
+        }
+    }
+
+    // Permissões de Gestor/Admin
+    if (!isAdmin() && !isManager()) {
+        // Esconder botão de exportar
+        const btnExportar = document.getElementById('btnExportar');
+        if (btnExportar) btnExportar.style.display = 'none';
+    }
+}
+
 document.getElementById("btnFiltrar").addEventListener("click", carregarDados);
 document.getElementById("btnLimpar").addEventListener("click", () => {
   document.getElementById("tipoFiltro").value = "";
@@ -481,6 +552,184 @@ if (btnSaveConfig) {
 }
 
 // ==========================================
+// USER MANAGEMENT
+// ==========================================
+
+let currentUser = null; // Para edição
+
+async function loadUsers() {
+    try {
+        const response = await authenticatedFetch(`${urlBackend}/users`);
+        if (response.ok) {
+            const users = await response.json();
+            renderUsersTable(users);
+        } else {
+            console.error('Erro ao carregar usuários:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Erro ao carregar usuários:', error);
+    }
+}
+
+function renderUsersTable(users) {
+    const tbody = document.querySelector('#usersTable tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    users.forEach(user => {
+        const tr = document.createElement('tr');
+        
+        // Traduz o role
+        const roleMap = {
+            'admin': 'roleAdmin',
+            'manager': 'roleManager',
+            'user': 'roleUser'
+        };
+        const roleKey = roleMap[user.role] || user.role;
+        const roleLabel = t(roleKey) || user.role;
+        
+        const originLabel = user.origin === 'env' ? t('originEnv') : t('originDB');
+        const isEnvUser = user.origin === 'env';
+
+        tr.innerHTML = `
+            <td>${user.username}</td>
+            <td><span class="badge ${user.role === 'admin' ? 'badge-admin' : user.role === 'manager' ? 'badge-manager' : 'badge-user'}">${roleLabel}</span></td>
+            <td>${originLabel}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-icon btn-edit" ${isEnvUser ? 'disabled title="Usuários de sistema não podem ser editados"' : ''} onclick="openUserModal('${user.id}', '${user.username}', '${user.role}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button class="btn-icon btn-delete" ${isEnvUser ? 'disabled title="Usuários de sistema não podem ser excluídos"' : ''} onclick="deleteUser('${user.id}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+window.openUserModal = function(id, username, role) {
+    const modal = document.getElementById('userModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('userForm');
+    
+    if (id) {
+        // Edit Mode
+        currentUser = { id, username, role };
+        modalTitle.textContent = t('modalEditUser');
+        document.getElementById('username').value = username;
+        document.getElementById('role').value = role;
+        document.getElementById('password').value = ''; // Senha vazia no edit significa "não alterar"
+        document.getElementById('password').placeholder = 'Deixe em branco para manter a atual';
+    } else {
+        // Create Mode
+        currentUser = null;
+        modalTitle.textContent = t('modalNewUser');
+        form.reset();
+        document.getElementById('password').placeholder = 'Senha';
+    }
+    
+    modal.style.display = 'block';
+};
+
+window.closeUserModal = function() {
+    document.getElementById('userModal').style.display = 'none';
+    currentUser = null;
+};
+
+window.saveUser = async function() {
+    const username = document.getElementById('username').value;
+    const role = document.getElementById('role').value;
+    const password = document.getElementById('password').value;
+    
+    if (!username || !role) {
+        alert(t('fillAllFields'));
+        return;
+    }
+
+    const userData = { username, role };
+    if (password) userData.password = password;
+    else if (!currentUser) {
+        alert(t('fillAllFields')); // Reusing fillAllFields or we could add passwordRequired
+        return;
+    }
+
+    try {
+        let url = `${urlBackend}/users`;
+        let method = 'POST';
+        
+        if (currentUser) {
+            url += `/${currentUser.id}`;
+            method = 'PUT';
+        }
+
+        const response = await authenticatedFetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+
+        if (response.ok) {
+            closeUserModal();
+            loadUsers();
+            alert(t('alertUserSaved'));
+        } else {
+            const err = await response.json();
+            alert(t('alertUserError') + ': ' + (err.error || 'Erro desconhecido'));
+        }
+    } catch (error) {
+        console.error('Erro ao salvar usuário:', error);
+        alert(t('alertConnectionError'));
+    }
+};
+
+window.deleteUser = async function(id) {
+    if (!confirm(t('confirmDeleteUser'))) return;
+
+    try {
+        const response = await authenticatedFetch(`${urlBackend}/users/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            loadUsers();
+        } else {
+            const err = await response.json();
+            alert('Erro: ' + (err.error || 'Erro desconhecido'));
+        }
+    } catch (error) {
+        console.error('Erro ao excluir usuário:', error);
+        alert('Erro de conexão ao excluir usuário');
+    }
+};
+
+// Event Listeners for User Management
+const btnNewUser = document.getElementById('btnNewUser');
+if (btnNewUser) {
+    btnNewUser.addEventListener('click', () => openUserModal());
+}
+
+const btnCancelUser = document.getElementById('btnCancelUser');
+if (btnCancelUser) {
+    btnCancelUser.addEventListener('click', closeUserModal);
+}
+
+const userForm = document.getElementById('userForm');
+if (userForm) {
+    userForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveUser();
+    });
+}
+
+const btnCloseModal = document.querySelector('.close-modal');
+if (btnCloseModal) {
+    btnCloseModal.addEventListener('click', closeUserModal);
+}
+
+// ==========================================
 // INTERNATIONALIZATION & THEME
 // ==========================================
 
@@ -496,6 +745,9 @@ function updateLanguage(lang) {
   
   const tabConfig = document.querySelector('[data-tab="config-view"]');
   if (tabConfig) tabConfig.textContent = t('tabConfig');
+
+  const tabUsers = document.querySelector('[data-tab="users-view"]');
+  if (tabUsers) tabUsers.textContent = t('tabUsers');
   
   // Cards
   const cards = document.querySelectorAll('.card h3');
@@ -547,12 +799,32 @@ function updateLanguage(lang) {
   const btnSave = document.getElementById('btnSaveConfig');
   if (btnSave) btnSave.textContent = t('btnSave');
   
+  // User Management
+  const usersHeader = document.querySelector('#users-view h2 span');
+  if (usersHeader) usersHeader.textContent = t('usersTitle');
+  
+  const btnNewUser = document.getElementById('btnNewUser');
+  if (btnNewUser) btnNewUser.textContent = t('btnNewUser');
+  
+  const userThs = document.querySelectorAll('#usersTable thead th');
+  if (userThs.length >= 4) {
+      userThs[0].textContent = t('userTableUser');
+      userThs[1].textContent = t('userTableRole');
+      userThs[2].textContent = t('userTableOrigin');
+      userThs[3].textContent = t('userTableActions');
+  }
+
   // Dark Mode Button Title
   const dmToggle = document.getElementById('darkModeToggle');
   if (dmToggle) dmToggle.title = t('darkModeTitle');
 
   // Re-render questions list to update translations inside it
   renderQuestionsList();
+  
+  // Re-render users table if visible to update translations
+  if (document.getElementById('users-view').style.display === 'block') {
+      loadUsers();
+  }
 }
 
 // Sobrescreve a função global changeLanguage para atualizar também o dashboard
@@ -618,4 +890,3 @@ setInterval(() => {
     carregarDados();
   }
 }, 60000);
-

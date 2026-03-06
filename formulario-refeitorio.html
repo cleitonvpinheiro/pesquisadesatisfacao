@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Satisfação - Refeitório</title>
+    <link rel="stylesheet" href="from.css">
+    <link rel="icon" href="assets/logo.png">
+    <script src="translations.js"></script>
+</head>
+
+<body>
+    <!-- Seletor de idioma (Mobile Style Pill) -->
+    <div class="language-selector-pill">
+        <button type="button" class="lang-btn" data-lang="pt" onclick="changeLanguage('pt')">PT</button>
+        <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')">EN</button>
+        <button type="button" class="lang-btn" data-lang="es" onclick="changeLanguage('es')">ES</button>
+    </div>
+
+    <div class="container">
+        <img src="./assets/logo.png" alt="Logo Familia Madalosso">
+        <h2 data-translate="surveyTitle">Pesquisa satisfação - Refeitório</h2>
+
+        <form id="formSatisfacao">
+            <h3 data-translate="generalData">1. Dados Gerais</h3>
+            
+            <!-- Dynamic Questions Container -->
+            <div id="questions-container">
+                <!-- Perguntas serão carregadas aqui via JavaScript -->
+                <p style="text-align: center; color: #666;">Carregando perguntas...</p>
+            </div>
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+            <label data-translate="overallRating" style="font-weight: bold; display: block; margin-bottom: 10px;">Nota geral do refeitório:</label>
+            <select name="notaGeral" data-pergunta="notaGeral" id="notaGeral" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="" data-translate="select">Selecione</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+            </select>
+            <div id="classificacao-nota" class="classificacao-feedback"></div>
+            
+            <h3 data-translate="suggestions" style="margin-top: 20px;">5. Sugestões</h3>
+
+            <textarea name="sugestao" data-translate-placeholder="suggestionsPlaceholder" placeholder="O que você gostaria de ver de diferente?" style="width: 100%; height: 100px; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+
+            <button type="submit" class="btn-enviar" data-translate="submit">Enviar</button>
+        </form>
+    </div>
+
+    <script src="questionario.js"></script>
+
+</body>
+</html>
