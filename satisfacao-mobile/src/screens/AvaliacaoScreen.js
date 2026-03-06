@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         paddingTop: 60,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#faab45',
     },
     languageContainer: {
         position: 'absolute',
@@ -74,29 +74,42 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
+        fontFamily: 'Poppins_700Bold',
         marginBottom: 40,
-        color: '#333',
+        color: '#000',
     },
     button: {
         width: '100%',
         padding: 20,
-        borderRadius: 10,
+        borderRadius: 12,
         alignItems: 'center',
-        marginBottom: 15,
-        elevation: 3,
+        justifyContent: 'center',
+        marginBottom: 16,
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
     excelenteButton: {
-        backgroundColor: '#4CAF50',
+        backgroundColor: '#00b894', // Mint Green
     },
     bomButton: {
-        backgroundColor: '#FFC107',
+        backgroundColor: '#Faa45', // Dark Slate Grey
     },
     ruimButton: {
-        backgroundColor: '#F44336',
+        backgroundColor: '#d63031', // Soft Red
     },
     buttonText: {
-        color: '#fff',
-        fontSize: 20,
+        color: '#ffffff',
+        fontSize: 22,
         fontWeight: 'bold',
+        fontFamily: 'Poppins_700Bold',
+        textShadowColor: 'rgba(0, 0, 0, 0.2)',
+        textShadowOffset: {width: 1, height: 1},
+        textShadowRadius: 3
     },
 });

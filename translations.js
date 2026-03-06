@@ -538,10 +538,27 @@ function updatePageTexts() {
 // ==========================================
 // DARK MODE
 // ==========================================
+function updateDarkModeIcons() {
+    const isDark = document.body.classList.contains('dark-mode');
+    const moonIcon = document.querySelector('.icon-moon');
+    const sunIcon = document.querySelector('.icon-sun');
+    
+    if (moonIcon && sunIcon) {
+        if (isDark) {
+            moonIcon.style.display = 'none';
+            sunIcon.style.display = 'block';
+        } else {
+            moonIcon.style.display = 'block';
+            sunIcon.style.display = 'none';
+        }
+    }
+}
+
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
     const isDark = document.body.classList.contains('dark-mode');
     localStorage.setItem('darkMode', isDark);
+    updateDarkModeIcons();
 }
 
 // Inicialização
@@ -554,10 +571,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isDark) {
       document.body.classList.add('dark-mode');
   }
+  updateDarkModeIcons();
   
   // Listener para o botão de dark mode
   const darkModeBtn = document.getElementById('darkModeToggle');
   if (darkModeBtn) {
-      darkModeBtn.addEventListener('click', toggleDarkMode);
+      // Remove listeners anteriores para evitar duplicação se o script rodar mais de uma vez
+      const newBtn = darkModeBtn.cloneNode(true);
+      darkModeBtn.parentNode.replaceChild(newBtn, darkModeBtn);
+      newBtn.addEventListener('click', toggleDarkMode);
   }
 });

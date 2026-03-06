@@ -108,47 +108,61 @@ body.dark-mode {
 .control-pill {
   display: flex;
   align-items: center;
-  background: var(--cor-fundo);
-  padding: 4px 8px;
+  background: transparent;
+  padding: 6px 12px;
   border-radius: 50px;
-  border: 1px solid var(--cor-borda);
+  box-shadow: none;
+  border: none;
   transition: all 0.3s ease;
 }
 
 .control-pill:hover {
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  box-shadow: none;
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 1);
+  background: transparent;
 }
 
 .language-toggle-group {
     display: flex;
     align-items: center;
-    background: rgba(0,0,0,0.03);
-    border-radius: 20px;
-    padding: 2px;
+    background: transparent;
+    border-radius: 30px;
+    padding: 4px;
+    gap: 4px;
 }
 
 .lang-btn {
     background: transparent;
     border: none;
-    padding: 6px 12px;
-    border-radius: 16px;
-    color: #666;
-    font-weight: 600;
-    font-size: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.7;
 }
 
 .lang-btn:hover {
     background: rgba(0,0,0,0.05);
+    opacity: 1;
+    transform: scale(1.1);
 }
 
 .lang-btn.active {
     background: #FAAA46; /* Brand color */
-    color: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(250, 170, 70, 0.4);
+    transform: scale(1.05);
+}
+
+.lang-btn svg {
+    width: 20px;
+    height: 20px;
+    border-radius: 2px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
 }
 
 .divider {
@@ -179,13 +193,13 @@ body.dark-mode {
 
 /* Dark Mode States */
 body.dark-mode .control-pill {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255,255,255,0.1);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
 }
 
 body.dark-mode .language-toggle-group {
-    background: rgba(255,255,255,0.05);
+    background: transparent;
 }
 
 body.dark-mode .lang-btn {
@@ -254,18 +268,18 @@ body {
    ============================================================ */
 h1 {
   text-align: center;
-  color: #333;
+  color: var(--cor-texto);
 }
 
 h2 {
-  color: #555;
-  border-bottom: 2px solid #ddd;
+  color: var(--cor-cinza);
+  border-bottom: 2px solid var(--cor-borda);
   padding-bottom: 5px;
   margin-top: 30px;
 }
 
 h3 {
-  color: #666;
+  color: var(--cor-cinza);
   margin-top: 20px;
 }
 
@@ -328,7 +342,8 @@ h3 {
 }
 
 .card {
-  background: white;
+  background: var(--cor-branca);
+  color: var(--cor-texto);
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -345,7 +360,8 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
-  background: #fff;
+  background: var(--cor-branca);
+  color: var(--cor-texto);
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -371,7 +387,7 @@ h3 {
 .filtros label {
   font-size: 14px;
   margin-bottom: 5px;
-  color: #555;
+  color: var(--cor-texto);
   font-weight: 500;
 }
 
@@ -383,7 +399,8 @@ h3 {
   font-size: 14px;
   width: 100%;
   height: 38px; /* Altura consistente */
-  background-color: #fff;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
   transition: border-color 0.2s;
 }
 
@@ -451,7 +468,8 @@ h3 {
 }
 
 .sugestao-item {
-  background: white;
+  background: var(--cor-branca);
+  color: var(--cor-texto);
   margin-bottom: 10px;
   padding: 15px;
   border-radius: 5px;
@@ -490,14 +508,19 @@ h3 {
   text-align: center;
   font-size: 18px;
   font-weight: bold;
-  color: #333;
+  color: var(--cor-texto);
+}
+
+body.dark-mode .resumo {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* ============================================================
    CONFIGURAÇÃO DO FORMULÁRIO
    ============================================================ */
 .config-section {
-  background: #fff;
+  background: var(--cor-branca);
+  color: var(--cor-texto);
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);

@@ -9,24 +9,36 @@ export function AuthProvider({ children }) {
 
     async function login(username, password) {
         try {
-            const response = await api.get('/check-login');
-            setUser(response.data.user);
-            return true
-        } catch {
-            return false
+            const response = await api.post('/login', { username, password });
+            if (response.data.success) {
+                setUser(response.data.user);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Login error:", error);
+            return false;
         }
     }
 
     async function logout() {
-        await api.get('/logout');
+        try {
+            await api.post('/logout');
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
         setUser(null);
     }
+
     async function verify() {
         try {
-            const response = await api.get('/check-login');
-            setUser(response.data.user);
-            return true
+            const response = await api.get('/verify-auth');
+            if (response.data.success) {
+                setUser(response.data.user);
+                return true;
+            }
         } catch {
+            // Silently fail if not authenticated
             setUser(null);
         } finally {
             setLoading(false);

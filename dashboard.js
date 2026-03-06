@@ -1,12 +1,11 @@
-const urlBackend = 'http://localhost:3003';
 let graficoClassificacao, graficoNotas;
 let dadosAtuais = []; // Armazena os dados atuais para exportação
 
 async function carregarDados() {
   try {
     const [avaliacoes, questionarios] = await Promise.all([
-      authenticatedFetch(`${urlBackend}/avaliacoes`).then(r => r.json()).catch(() => []),
-      authenticatedFetch(`${urlBackend}/questionarios`).then(r => r.json()).catch(() => [])
+      authenticatedFetch('/avaliacoes').then(r => r.json()).catch(() => []),
+      authenticatedFetch('/questionarios').then(r => r.json()).catch(() => [])
     ]);
 
     // Remove duplicidades: quando há questionário e avaliação quase simultâneos com mesma sugestão
@@ -373,7 +372,7 @@ let currentQuestions = [];
 
 async function loadFormConfig() {
   try {
-    const response = await authenticatedFetch(`${urlBackend}/config/form`);
+    const response = await authenticatedFetch('/config/form');
     if (response.ok) {
       const config = await response.json();
       currentQuestions = config.questions || [];
@@ -538,7 +537,7 @@ const btnSaveConfig = document.getElementById('btnSaveConfig');
 if (btnSaveConfig) {
     btnSaveConfig.addEventListener('click', async () => {
       try {
-        const response = await authenticatedFetch(`${urlBackend}/config/form`, {
+        const response = await authenticatedFetch('/config/form', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ questions: currentQuestions })
@@ -559,7 +558,7 @@ let currentUser = null; // Para edição
 
 async function loadUsers() {
     try {
-        const response = await authenticatedFetch(`${urlBackend}/users`);
+        const response = await authenticatedFetch('/users');
         if (response.ok) {
             const users = await response.json();
             renderUsersTable(users);
@@ -870,7 +869,23 @@ if (darkModeToggle) {
       localStorage.setItem('darkMode', isDark);
       // darkModeToggle.textContent = isDark ? '☀️' : '🌙'; // Desativado para usar SVGs
       renderQuestionsList(); // Update inline styles if needed
+      updateChartTheme();
     });
+}
+
+function updateChartTheme() {
+  const isDark = document.body.classList.contains('dark-mode');
+  const textColor = isDark ? '#e0e0e0' : '#666';
+  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+  if (window.Chart) {
+      Chart.defaults.color = textColor;
+      Chart.defaults.borderColor = gridColor;
+  }
+
+  if (typeof atualizarGraficos === 'function' && typeof dadosAtuais !== 'undefined' && dadosAtuais.length > 0) {
+      atualizarGraficos([], dadosAtuais);
+  }
 }
 
 // Initialize
@@ -882,6 +897,7 @@ if (savedTheme) {
   document.body.classList.add('dark-mode');
   // if (darkModeToggle) darkModeToggle.textContent = '☀️'; // Desativado
 }
+updateChartTheme();
 updateLanguage(savedLang);
 
 // Refresh data every 60 seconds

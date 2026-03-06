@@ -22,9 +22,15 @@
         <div class="divider-vertical"></div>
         <div class="control-pill">
             <div class="language-toggle-group">
-                 <button type="button" class="lang-btn" data-lang="pt" onclick="changeLanguage('pt')">PT</button>
-                 <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')">EN</button>
-                 <button type="button" class="lang-btn" data-lang="es" onclick="changeLanguage('es')">ES</button>
+                 <button type="button" class="lang-btn" data-lang="pt" onclick="changeLanguage('pt')" title="Português">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 16" width="22" height="16"><rect width="22" height="16" fill="#009c3b"/><path d="M11 2L19 8L11 14L3 8Z" fill="#ffdf00"/><circle cx="11" cy="8" r="3.5" fill="#002776"/><path d="M9 8.5C9 8.5 10 9.5 13 8" stroke="#fff" stroke-width="0.5" fill="none"/></svg>
+                 </button>
+                 <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')" title="English">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 16" width="22" height="16"><rect width="22" height="16" fill="#b22234"/><path d="M0 2H22M0 6H22M0 10H22M0 14H22" stroke="#fff" stroke-width="2"/><rect width="10" height="9" fill="#3c3b6e"/><path d="M1 1.5h8M1 4.5h8M1 7.5h8" stroke="#fff" stroke-width="0.5" stroke-dasharray="1 1" opacity="0.5"/></svg>
+                 </button>
+                 <button type="button" class="lang-btn" data-lang="es" onclick="changeLanguage('es')" title="Español">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 16" width="22" height="16"><rect width="22" height="16" fill="#AA151B"/><rect y="4" width="22" height="8" fill="#F1BF00"/></svg>
+                 </button>
             </div>
             <div class="divider"></div>
             <button id="darkModeToggle" class="btn-icon" title="Alternar Modo Escuro" aria-label="Modo Escuro">

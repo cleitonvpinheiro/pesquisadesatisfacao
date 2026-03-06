@@ -96,6 +96,43 @@ export default function QuestionarioScreen() {
         );
     };
 
+    const getLabel = (question) => {
+        const labelMap = {
+            'horario': 'mealSchedule',
+            'qualidade': 'mealQuality',
+            'variedade': 'mealVariety',
+            'cardapio': 'menuNeeds',
+            'temperatura': 'foodTemperature',
+            'limpeza': 'cafeteriaClean',
+            'organizacao': 'comfortOrganization',
+            'espera': 'waitingTime'
+        };
+
+        if (labelMap[question.id]) {
+            return t(labelMap[question.id]);
+        }
+        return question.label;
+    };
+
+    const getOptionLabel = (option) => {
+        const optionMap = {
+            'Café': 'breakfast',
+            'Almoço': 'lunch',
+            'Jantar': 'dinner',
+            'Sim': 'yes',
+            'Parcialmente': 'partially',
+            'Não': 'no',
+            'Rápido': 'fast',
+            'Razoável': 'reasonable',
+            'Demorado': 'slow'
+        };
+
+        if (optionMap[option]) {
+            return t(optionMap[option]);
+        }
+        return option;
+    };
+
     const renderRadio = (question) => {
         return (
             <View style={styles.radioGroup}>
@@ -105,7 +142,9 @@ export default function QuestionarioScreen() {
                         style={[styles.radioButton, answers[question.id] === opt && styles.radioButtonSelected]}
                         onPress={() => handleAnswer(question.id, opt)}
                     >
-                        <Text style={[styles.radioText, answers[question.id] === opt && styles.radioTextSelected]}>{opt}</Text>
+                        <Text style={[styles.radioText, answers[question.id] === opt && styles.radioTextSelected]}>
+                            {getOptionLabel(opt)}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -207,7 +246,7 @@ export default function QuestionarioScreen() {
             {/* Renderização Dinâmica das Perguntas */}
             {questions.map((q) => (
                 <View key={q.id}>
-                    <Text style={styles.label}>{q.label}</Text>
+                    <Text style={styles.label}>{getLabel(q)}</Text>
                     {q.type === 'stars' && renderStars(q.id, answers[q.id] || 0)}
                     {q.type === 'radio' && renderRadio(q)}
                 </View>
@@ -250,7 +289,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#faab45',
     },
     headerContainer: {
         alignItems: 'center',
@@ -267,8 +306,9 @@ const styles = StyleSheet.create({
     },
     backButtonText: {
         fontSize: 30,
-        color: '#333',
+        color: '#000',
         fontWeight: 'bold',
+        fontFamily: 'Poppins_700Bold',
     },
     languageContainer: {
         position: 'absolute',
@@ -286,23 +326,27 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
-        color: '#333',
+        color: '#000',
+        fontFamily: 'Poppins_700Bold',
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         marginTop: 20,
         marginBottom: 10,
-        color: '#444',
+        color: '#000',
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: '#333',
         paddingBottom: 5,
+        fontFamily: 'Poppins_700Bold',
     },
     label: {
         fontSize: 16,
+        fontWeight: 'bold',
         marginBottom: 8,
         marginTop: 10,
-        color: '#555',
+        color: '#000',
+        fontFamily: 'Poppins_600SemiBold',
     },
     starsContainer: {
         flexDirection: 'row',
@@ -310,11 +354,14 @@ const styles = StyleSheet.create({
     },
     star: {
         fontSize: 30,
-        color: '#ddd',
+        color: '#555',
         marginRight: 10,
     },
     starSelected: {
-        color: '#FFD700',
+        color: '#fff',
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: {width: -1, height: 1},
+        textShadowRadius: 10
     },
     radioGroup: {
         flexDirection: 'row',
@@ -323,7 +370,8 @@ const styles = StyleSheet.create({
     },
     radioButton: {
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: '#333',
+        backgroundColor: 'rgba(255,255,255,0.3)',
         borderRadius: 20,
         paddingVertical: 8,
         paddingHorizontal: 16,
@@ -335,10 +383,12 @@ const styles = StyleSheet.create({
         borderColor: '#007bff',
     },
     radioText: {
-        color: '#555',
+        color: '#000',
+        fontFamily: 'Poppins_400Regular',
     },
     radioTextSelected: {
         color: '#fff',
+        fontFamily: 'Poppins_600SemiBold',
     },
     notaContainer: {
         flexDirection: 'row',
@@ -351,7 +401,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: '#333',
+        backgroundColor: 'rgba(255,255,255,0.3)',
         borderRadius: 17.5,
         margin: 3,
     },
@@ -360,19 +411,24 @@ const styles = StyleSheet.create({
         borderColor: '#007bff',
     },
     notaText: {
-        color: '#555',
+        color: '#000',
         fontSize: 12,
+        fontWeight: 'bold',
+        fontFamily: 'Poppins_700Bold',
     },
     notaTextSelected: {
         color: '#fff',
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: '#333',
+        backgroundColor: 'rgba(255,255,255,0.5)',
         borderRadius: 8,
         padding: 10,
         textAlignVertical: 'top',
         minHeight: 100,
+        color: '#000',
+        fontFamily: 'Poppins_400Regular',
     },
     submitButton: {
         backgroundColor: '#28a745',
@@ -386,5 +442,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
+        fontFamily: 'Poppins_700Bold',
     },
 });

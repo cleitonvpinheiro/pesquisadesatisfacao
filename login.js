@@ -1,3 +1,20 @@
+// Configuração da API
+const API_PORT = 3003;
+
+function getApiUrl(path) {
+    // Se estiver rodando em arquivo local, usa http
+    const protocol = window.location.protocol.startsWith('https') ? 'https' : 'http';
+    const hostname = window.location.hostname;
+    
+    // Se estiver rodando localmente (file:// ou localhost), usa localhost
+    // Se estiver rodando em IP (rede), usa o mesmo IP
+    const host = (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') 
+        ? 'localhost' 
+        : hostname;
+        
+    return `${protocol}://${host}:${API_PORT}${path}`;
+}
+
 // Aguarda o carregamento completo da página
 document.addEventListener('DOMContentLoaded', function() {
     // Carrega o idioma salvo e atualiza os textos
@@ -50,14 +67,16 @@ function handleLogin(event) {
         .catch(error => {
             console.error('Erro na autenticação:', error);
             // Mostra a mensagem de erro real se disponível, caso contrário erro de conexão
-            const msg = error.message && error.message !== 'Failed to fetch' ? error.message : t('connectionError');
+            const msg = error.message && error.message !== 'Failed to fetch' 
+                ? error.message 
+                : `${t('connectionError')} (API: ${getApiUrl('')})`;
             showError(msg);
         });
 }
 
 // Função para autenticar usuário
 function authenticateUser(username, password) {
-    return fetch('http://localhost:3003/login', {
+    return fetch(getApiUrl('/login'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -84,7 +103,7 @@ function verifyToken() {
     const token = localStorage.getItem('authToken');
     if (!token) return Promise.resolve(false);
     
-    return fetch('http://localhost:3003/verify-auth', {
+    return fetch(getApiUrl('/verify-auth'), {
         headers: {
             'Authorization': `Bearer ${token}`
         }

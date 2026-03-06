@@ -288,10 +288,26 @@ app.post("/login", authLimiter, async (req, res, next) => {
 
   // 1. Tenta autenticação no banco de dados local (users.json)
   const db = await getDB()
-  const dbUser = db.users.find(u => u.username === value.username && u.password === value.password)
+  const dbUser = db.users.find(u => u.username === value.username)
   
   if (dbUser) {
-      return createSession(dbUser)
+      // Verifica senha (suporta hash e plain text para migração)
+      const isMatch = await bcrypt.compare(value.password, dbUser.password).catch(() => false)
+      
+      if (isMatch) {
+          return createSession(dbUser)
+      } else if (dbUser.password === value.password) {
+          // Auto-migração: converte senha em texto plano para hash
+          try {
+              const hashedPassword = await bcrypt.hash(value.password, 10)
+              dbUser.password = hashedPassword
+              await saveDB(db)
+              console.log(`Senha do usuário ${dbUser.username} migrada para hash com segurança.`)
+              return createSession(dbUser)
+          } catch (err) {
+              console.error("Erro ao migrar senha:", err)
+          }
+      }
   }
 
   // 2. Tenta autenticação com usuários de ambiente (fallback)
@@ -571,7 +587,7 @@ app.post("/users", requireAuth, requireAdmin, async (req, res) => {
         const newUser = {
             id: Date.now().toString(),
             username: value.username,
-            password: value.password, // Em produção, usar bcrypt hash!
+            password: await bcrypt.hash(value.password, 10), // Senha hashada
             role: value.role,
             createdAt: new Date().toISOString()
         };
@@ -613,7 +629,7 @@ app.put("/users/:id", requireAuth, requireAdmin, async (req, res) => {
 
         // Atualiza campos
         if (value.username) db.users[userIndex].username = value.username;
-        if (value.password) db.users[userIndex].password = value.password;
+        if (value.password) db.users[userIndex].password = await bcrypt.hash(value.password, 10);
         if (value.role) db.users[userIndex].role = value.role;
 
         await saveDB(db);

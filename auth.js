@@ -1,5 +1,30 @@
 // Sistema de autenticação para o dashboard
 
+// Configuração da API
+const API_PORT = 3003;
+
+function getApiUrl(path) {
+    // Se estiver rodando em arquivo local, usa http
+    const protocol = window.location.protocol.startsWith('https') ? 'https' : 'http';
+    const hostname = window.location.hostname;
+    
+    // Se estiver rodando localmente (file:// ou localhost), usa localhost
+    // Se estiver rodando em IP (rede), usa o mesmo IP
+    const host = (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') 
+        ? 'localhost' 
+        : hostname;
+        
+    // Remove barra inicial do path se houver, para evitar duplicidade
+    const cleanPath = path.startsWith('/') ? path : '/' + path;
+    
+    return `${protocol}://${host}:${API_PORT}${cleanPath}`;
+}
+
+// Inicializa a autenticação (alias para checkAuth para compatibilidade)
+function initAuth() {
+    return checkAuth();
+}
+
 // Função para verificar se o usuário está autenticado
 function checkAuth() {
     const token = localStorage.getItem('authToken');
@@ -9,7 +34,7 @@ function checkAuth() {
         return Promise.resolve(false);
     }
     
-    return fetch('http://localhost:3003/verify-auth', {
+    return fetch(getApiUrl('/verify-auth'), {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -33,6 +58,8 @@ function checkAuth() {
     })
     .catch(error => {
         console.error('Erro na verificação de autenticação:', error);
+        // Em caso de erro de conexão, tenta permitir acesso se tiver token, 
+        // mas idealmente deveria bloquear. Vamos manter o bloqueio por segurança.
         redirectToLogin();
         return false;
     });
@@ -40,6 +67,11 @@ function checkAuth() {
 
 // Função para redirecionar para login
 function redirectToLogin() {
+    // Evita loop de redirecionamento se já estiver na página de login
+    if (window.location.pathname.endsWith('login.html')) {
+        return;
+    }
+
     // Remove tokens inválidos
     localStorage.removeItem('authToken');
     localStorage.removeItem('userInfo');
@@ -54,7 +86,7 @@ function logout() {
     
     if (token) {
         // Chama endpoint de logout no backend
-        fetch('http://localhost:3003/logout', {
+        fetch(getApiUrl('/logout'), {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -70,6 +102,43 @@ function logout() {
     // Redireciona para login
     window.location.href = 'login.html';
 }
+
+// Helper para fetch autenticado
+function authenticatedFetch(url, options = {}) {
+    const token = localStorage.getItem('authToken');
+    
+    // Se a URL for relativa ou apenas o path, usa getApiUrl
+    let finalUrl = url;
+    if (url.startsWith('/')) {
+        finalUrl = getApiUrl(url);
+    } else if (!url.startsWith('http')) {
+        // Assume que é um path sem barra inicial
+        finalUrl = getApiUrl('/' + url);
+    }
+    
+    const defaultHeaders = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+    
+    const finalOptions = {
+        ...options,
+        headers: {
+            ...defaultHeaders,
+            ...options.headers
+        }
+    };
+    
+    return fetch(finalUrl, finalOptions).then(response => {
+        if (response.status === 401 || response.status === 403) {
+            // Token expirado ou inválido
+            redirectToLogin();
+            throw new Error('Sessão expirada');
+        }
+        return response;
+    });
+}
+
 
 // Função para obter informações do usuário
 function getUserInfo() {
@@ -113,32 +182,7 @@ function hasPermission(requiredRole) {
     return userLevel >= requiredLevel;
 }
 
-// Função para fazer requisições autenticadas
-function authenticatedFetch(url, options = {}) {
-    const token = localStorage.getItem('authToken');
-    
-    if (!token) {
-        redirectToLogin();
-        return Promise.reject(new Error('Token não encontrado'));
-    }
-    
-    const authOptions = {
-        ...options,
-        headers: {
-            ...options.headers,
-            'Authorization': `Bearer ${token}`
-        }
-    };
-    
-    return fetch(url, authOptions)
-        .then(response => {
-            if (response.status === 401) {
-                redirectToLogin();
-                throw new Error('Não autorizado');
-            }
-            return response;
-        });
-}
+// Função para fazer requisições autenticadas (Removida duplicata - usar a definição anterior que utiliza getApiUrl)
 
 // Expor funções globalmente
 window.checkAuth = checkAuth;

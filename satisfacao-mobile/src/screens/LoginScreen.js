@@ -45,18 +45,25 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+        backgroundColor: '#faab45',
     },
     title: {
         fontSize: 24,
+        fontWeight: 'bold',
+        fontFamily: 'Poppins_700Bold',
         marginBottom: 20,
+        color: '#000',
     },
     input: {
         width: '100%',
         padding: 10,
         marginBottom: 10,
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: '#333',
         borderRadius: 5,
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        color: '#000',
+        fontFamily: 'Poppins_400Regular',
     },
     button: {
         width: '100%',
@@ -68,5 +75,6 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 16,
+        fontFamily: 'Poppins_700Bold',
     },
 });
