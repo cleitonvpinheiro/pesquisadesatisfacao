@@ -1,7 +1,6 @@
 import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
-import fs from "fs-extra"
 import crypto from "crypto"
 import dotenv from "dotenv"
 import helmet from "helmet"
@@ -13,6 +12,7 @@ import passport from "passport"
 import { Strategy as LdapStrategy } from "passport-ldapauth"
 import { Server } from "http"
 import { url } from "inspector"
+import { DatabaseSync } from "node:sqlite"
 
 
 const ldapOptions = {
@@ -44,7 +44,6 @@ if (ldapEnabled) {
   console.warn("LDAP desabilitado: variáveis de ambiente não configuradas.")
 }
 const PORT = process.env.PORT || 3003
-const DB_File = "./database.json"
 
 // Usuários válidos (carregados das variáveis de ambiente)
 const validUsers = [
@@ -58,6 +57,16 @@ const sessions = new Map()
 
 // Armazenamento de clientes SSE
 let sseClients = [];
+
+const sessionCleanupInterval = setInterval(() => {
+    const now = Date.now()
+    for (const [token, session] of sessions.entries()) {
+        if (!session || session.expires < now) {
+            sessions.delete(token)
+        }
+    }
+}, 10 * 60 * 1000)
+if (typeof sessionCleanupInterval.unref === 'function') sessionCleanupInterval.unref()
 
 // Função para enviar atualizações SSE
 function enviarAtualizacaoSSE(data) {
@@ -94,9 +103,19 @@ const defaultOrigins = [
 ]
 const envOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
 const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])]
+
+function isAllowedOrigin(origin) {
+    if (!origin) return true
+    if (allowedOrigins.includes(origin)) return true
+
+    if (/^http:\/\/(localhost|127\.0\.0\.1):\d{2,5}$/.test(origin)) return true
+    if (/^http:\/\/(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):\d{2,5}$/.test(origin)) return true
+
+    return false
+}
 app.use(cors({
     origin: function(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (isAllowedOrigin(origin)) {
             return callback(null, true)
         }
         return callback(new Error('Not allowed by CORS'))
@@ -114,14 +133,14 @@ app.use(cors({
 app.use((req, res, next) => {
     if (req.method === 'OPTIONS') {
         const origin = req.headers.origin
-        if (!origin || allowedOrigins.includes(origin)) {
-            res.header('Access-Control-Allow-Origin', origin || '*')
-            res.header('Access-Control-Allow-Credentials', 'true')
-            res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-            res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, content-type')
-            return res.sendStatus(204)
-        }
-        return res.status(403).send('Not allowed by CORS')
+        if (!origin) return res.sendStatus(204)
+        if (!isAllowedOrigin(origin)) return res.status(403).send('Not allowed by CORS')
+
+        res.header('Access-Control-Allow-Origin', origin)
+        res.header('Access-Control-Allow-Credentials', 'true')
+        res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, content-type')
+        return res.sendStatus(204)
     }
     next()
 })
@@ -135,24 +154,76 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
 })
 
+const submitLimiter = rateLimit({
+    windowMs: parseInt(process.env.SUBMIT_RATE_LIMIT_WINDOW_MS) || 10 * 60 * 1000,
+    max: parseInt(process.env.SUBMIT_RATE_LIMIT_MAX_REQUESTS) || 60,
+    message: { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+
 app.use(bodyParser.json({ limit: '10mb' }))
 app.use(cookieParser())
 
-// 🔧 Funções auxiliares
-async function getDB() {
-    try {
-        const data = await fs.readJson(DB_File)
-        if (!data.avaliacoes) data.avaliacoes = []
-        if (!data.questionarios) data.questionarios = []
-        if (!data.users) data.users = []
-        return data
-    } catch {
-        return { avaliacoes: [], questionarios: [], users: [] }
-    }
+const SQLITE_FILE = process.env.SQLITE_FILE || "./database.sqlite"
+
+const sqlite = new DatabaseSync(SQLITE_FILE)
+
+sqlite.exec("PRAGMA foreign_keys = ON;")
+
+sqlite.exec(`
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL,
+    createdAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS avaliacoes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    avaliacao TEXT NOT NULL,
+    sugestao TEXT,
+    notaGeral INTEGER,
+    data TEXT NOT NULL,
+    ip TEXT
+);
+
+CREATE TABLE IF NOT EXISTS questionarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    horario TEXT,
+    notaGeral INTEGER NOT NULL,
+    sugestao TEXT,
+    data TEXT NOT NULL,
+    ip TEXT,
+    payload_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS form_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    config_json TEXT NOT NULL
+);
+`)
+
+function getFormConfig() {
+
+    const row = sqlite
+        .prepare("SELECT config_json FROM form_config WHERE id = 1")
+        .get()
+
+    return row?.config_json ? JSON.parse(row.config_json) : null
 }
 
-async function saveDB(data) {
-    await fs.writeJSON(DB_File, data, { spaces: 2 })
+function setFormConfig(config) {
+
+    if (!config) return
+
+    sqlite.prepare(`
+        INSERT INTO form_config (id, config_json)
+        VALUES (1, ?)
+        ON CONFLICT(id) DO UPDATE SET
+        config_json = excluded.config_json
+    `).run(JSON.stringify(config))
 }
 
 // Função para gerar token de sessão
@@ -213,8 +284,22 @@ const questionarioSchema = Joi.object({
     sugestao: Joi.string().max(500).allow('')
 })
 
+const dynamicQuestionarioValueSchema = Joi.alternatives().try(
+    Joi.number(),
+    Joi.boolean(),
+    Joi.string().max(1000).allow(''),
+    Joi.array().max(20).items(Joi.number(), Joi.string().max(200).allow(''), Joi.boolean())
+)
+
+const questionarioSubmitSchema = Joi.object({
+    notaGeral: Joi.number().integer().min(0).max(10).required(),
+    sugestao: Joi.string().max(500).allow('').trim(),
+    horario: Joi.string().valid('Café', 'Almoço', 'Jantar').optional(),
+    avaliacaoInicial: Joi.string().valid('excelente', 'bom', 'ruim').optional(),
+}).pattern(/.*/, dynamicQuestionarioValueSchema).max(100)
+
 // Rota para SSE (Server-Sent Events) - Atualizações em tempo real para o Dashboard
-app.get('/events', (req, res) => {
+app.get('/events', requireAuth, requireManagerOrAdmin, (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -278,7 +363,6 @@ app.post("/login", authLimiter, async (req, res, next) => {
       console.log(`Login bem-sucedido para: ${user.username} (${user.role})`)
       res.json({
         success: true,
-        token,
         user: {
           username: user.username,
           role: user.role
@@ -286,9 +370,10 @@ app.post("/login", authLimiter, async (req, res, next) => {
       })
   }
 
-  // 1. Tenta autenticação no banco de dados local (users.json)
-  const db = await getDB()
-  const dbUser = db.users.find(u => u.username === value.username)
+  // 1. Tenta autenticação no banco de dados local
+  const dbUser = sqlite
+      .prepare("SELECT id, username, password, role, createdAt FROM users WHERE username = ?")
+      .get(value.username)
   
   if (dbUser) {
       // Verifica senha (suporta hash e plain text para migração)
@@ -300,8 +385,7 @@ app.post("/login", authLimiter, async (req, res, next) => {
           // Auto-migração: converte senha em texto plano para hash
           try {
               const hashedPassword = await bcrypt.hash(value.password, 10)
-              dbUser.password = hashedPassword
-              await saveDB(db)
+              sqlite.prepare("UPDATE users SET password = ? WHERE id = ?").run(hashedPassword, dbUser.id)
               console.log(`Senha do usuário ${dbUser.username} migrada para hash com segurança.`)
               return createSession(dbUser)
           } catch (err) {
@@ -383,7 +467,7 @@ app.get("/verify-auth", requireAuth, (req, res) => {
 })
 
 // 📝 Rota antiga (avaliação simples)
-app.post("/avaliar", async (req, res) => {
+app.post("/avaliar", submitLimiter, async (req, res) => {
     try {
         // Validação com Joi
         const { error, value } = avaliacaoSchema.validate(req.body)
@@ -398,11 +482,9 @@ app.post("/avaliar", async (req, res) => {
         if (notaGeral !== undefined && notaGeral !== null) {
             // 🧠 Nova lógica de classificação
             if (notaGeral <= 3) avaliacao = "ruim";
-            else if (notaGeral <= 6) avaliacao = "bom";
+            else if (notaGeral <= 7) avaliacao = "bom";
             else avaliacao = "excelente";
         }
-
-        const db = await getDB();
 
         const novaAvaliacao = {
             id: Date.now(),
@@ -413,8 +495,16 @@ app.post("/avaliar", async (req, res) => {
             ip: req.ip || 'unknown'
         };
 
-        db.avaliacoes.push(novaAvaliacao);
-        await saveDB(db);
+        sqlite.prepare(
+            "INSERT OR REPLACE INTO avaliacoes (id, avaliacao, sugestao, notaGeral, data, ip) VALUES (?, ?, ?, ?, ?, ?)"
+        ).run(
+            novaAvaliacao.id,
+            novaAvaliacao.avaliacao,
+            novaAvaliacao.sugestao,
+            novaAvaliacao.notaGeral === null ? null : Number(novaAvaliacao.notaGeral),
+            novaAvaliacao.data,
+            novaAvaliacao.ip
+        );
 
         console.log(`Nova avaliação registrada: ${avaliacao} em ${new Date().toISOString()}`);
 
@@ -434,14 +524,14 @@ app.post("/avaliar", async (req, res) => {
 });
 
 // 📝 Rota para salvar questionário completo
-app.post("/questionario", async (req, res) => {
+app.post("/questionario", submitLimiter, async (req, res) => {
     try {
-        const { notaGeral, horario, sugestao, avaliacaoInicial, ...outrosCampos } = req.body;
-        
-        // Validação básica apenas para campos críticos do sistema, o resto é dinâmico
-        if (!notaGeral && notaGeral !== 0) {
-            return res.status(400).json({ error: "Nota geral é obrigatória" });
+        const { error, value } = questionarioSubmitSchema.validate(req.body)
+        if (error) {
+            return res.status(400).json({ error: "Dados inválidos: " + error.details[0].message })
         }
+
+        const { notaGeral, horario, sugestao, avaliacaoInicial, ...outrosCampos } = value;
 
         const novoQuestionario = {
             id: Date.now(),
@@ -453,23 +543,47 @@ app.post("/questionario", async (req, res) => {
             ip: req.ip
         };
 
-        const db = await getDB();
-        db.questionarios.push(novoQuestionario);
-        
-        // Se a avaliação inicial veio junto, salva também na lista de avaliações rápidas
-        if (avaliacaoInicial) {
-             const novaAvaliacao = {
-                id: Date.now() - 1, // Pequeno offset para não colidir ID se for muito rápido
-                avaliacao: avaliacaoInicial,
-                sugestao: sugestao || "",
-                notaGeral,
-                data: new Date().toISOString(),
-                ip: req.ip
-            };
-            db.avaliacoes.push(novaAvaliacao);
-        }
+        sqlite.exec("BEGIN")
+        try {
+            sqlite.prepare(
+                "INSERT OR REPLACE INTO questionarios (id, horario, notaGeral, sugestao, data, ip, payload_json) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            ).run(
+                novoQuestionario.id,
+                novoQuestionario.horario,
+                Number(novoQuestionario.notaGeral),
+                novoQuestionario.sugestao,
+                novoQuestionario.data,
+                novoQuestionario.ip ? String(novoQuestionario.ip) : null,
+                JSON.stringify(novoQuestionario)
+            )
 
-        await saveDB(db);
+            if (avaliacaoInicial) {
+                const novaAvaliacao = {
+                    id: Date.now() - 1,
+                    avaliacao: avaliacaoInicial,
+                    sugestao: sugestao || "",
+                    notaGeral,
+                    data: new Date().toISOString(),
+                    ip: req.ip
+                };
+
+                sqlite.prepare(
+                    "INSERT OR REPLACE INTO avaliacoes (id, avaliacao, sugestao, notaGeral, data, ip) VALUES (?, ?, ?, ?, ?, ?)"
+                ).run(
+                    novaAvaliacao.id,
+                    novaAvaliacao.avaliacao,
+                    novaAvaliacao.sugestao,
+                    novaAvaliacao.notaGeral === null || novaAvaliacao.notaGeral === undefined ? null : Number(novaAvaliacao.notaGeral),
+                    novaAvaliacao.data,
+                    novaAvaliacao.ip ? String(novaAvaliacao.ip) : null
+                )
+            }
+
+            sqlite.exec("COMMIT")
+        } catch (e) {
+            sqlite.exec("ROLLBACK")
+            throw e
+        }
         
         // Atualiza clientes via SSE
         enviarAtualizacaoSSE({ type: 'nova_avaliacao', data: novoQuestionario });
@@ -484,11 +598,10 @@ app.post("/questionario", async (req, res) => {
 // Configuração do formulário
 app.get("/config/form", async (req, res) => {
     try {
-        const db = await getDB();
-        
-        // Se não existir config, cria padrão
-        if (!db.formConfig) {
-            db.formConfig = {
+        let formConfig = getFormConfig()
+
+        if (!formConfig) {
+            formConfig = {
                 questions: [
                     { id: "qualidade", type: "stars", label: "Qualidade da Refeição", enabled: true },
                     { id: "variedade", type: "stars", label: "Variedade de Opções", enabled: true },
@@ -497,10 +610,10 @@ app.get("/config/form", async (req, res) => {
                     { id: "organizacao", type: "stars", label: "Organização e Atendimento", enabled: true }
                 ]
             };
-            await saveDB(db);
+            setFormConfig(formConfig)
         }
 
-        res.json(db.formConfig);
+        res.json(formConfig);
     } catch (error) {
         console.error("Erro ao buscar config:", error);
         res.status(500).json({ error: "Erro ao buscar configuração" });
@@ -515,11 +628,10 @@ app.post("/config/form", requireAuth, requireManagerOrAdmin, async (req, res) =>
             return res.status(400).json({ error: "Formato inválido" });
         }
 
-        const db = await getDB();
-        db.formConfig = { questions };
-        await saveDB(db);
+        const formConfig = { questions }
+        setFormConfig(formConfig)
 
-        res.json({ message: "Configuração salva com sucesso", config: db.formConfig });
+        res.json({ message: "Configuração salva com sucesso", config: formConfig });
     } catch (error) {
         console.error("Erro ao salvar config:", error);
         res.status(500).json({ error: "Erro ao salvar configuração" });
@@ -547,10 +659,12 @@ function requireManagerOrAdmin(req, res, next) {
 // 👥 Rotas de Gerenciamento de Usuários
 app.get("/users", requireAuth, requireAdmin, async (req, res) => {
     try {
-        const db = await getDB();
         // Retorna usuários do banco + usuários de ambiente (marcados como tal)
-        const dbUsers = db.users.map(u => ({ ...u, origin: 'database' }));
-        const envUsers = validUsers.map(u => ({ ...u, origin: 'env', id: 'env_' + u.username }));
+        const dbUsers = sqlite
+            .prepare("SELECT id, username, role, createdAt FROM users ORDER BY createdAt DESC")
+            .all()
+            .map(u => ({ ...u, origin: 'database' }));
+        const envUsers = validUsers.map(u => ({ username: u.username, role: u.role, origin: 'env', id: 'env_' + u.username }));
         
         // Combina as listas
         const allUsers = [...dbUsers, ...envUsers];
@@ -575,12 +689,10 @@ app.post("/users", requireAuth, requireAdmin, async (req, res) => {
 
         const { error, value } = schema.validate(req.body);
         if (error) return res.status(400).json({ error: error.details[0].message });
-
-        const db = await getDB();
         
         // Verifica se usuário já existe (no DB ou Env)
-        if (db.users.some(u => u.username === value.username) || 
-            validUsers.some(u => u.username === value.username)) {
+        const usernameExists = sqlite.prepare("SELECT 1 FROM users WHERE username = ?").get(value.username)
+        if (usernameExists || validUsers.some(u => u.username === value.username)) {
             return res.status(400).json({ error: "Usuário já existe" });
         }
 
@@ -592,8 +704,9 @@ app.post("/users", requireAuth, requireAdmin, async (req, res) => {
             createdAt: new Date().toISOString()
         };
 
-        db.users.push(newUser);
-        await saveDB(db);
+        sqlite.prepare(
+            "INSERT INTO users (id, username, password, role, createdAt) VALUES (?, ?, ?, ?, ?)"
+        ).run(newUser.id, newUser.username, newUser.password, newUser.role, newUser.createdAt);
 
         const { password, ...safeUser } = newUser;
         res.status(201).json(safeUser);
@@ -620,21 +733,35 @@ app.put("/users/:id", requireAuth, requireAdmin, async (req, res) => {
             return res.status(403).json({ error: "Não é possível editar usuários de ambiente via interface." });
         }
 
-        const db = await getDB();
-        const userIndex = db.users.findIndex(u => u.id === id);
+        const existingUser = sqlite
+            .prepare("SELECT id, username, role, createdAt FROM users WHERE id = ?")
+            .get(id);
 
-        if (userIndex === -1) {
+        if (!existingUser) {
             return res.status(404).json({ error: "Usuário não encontrado" });
         }
 
-        // Atualiza campos
-        if (value.username) db.users[userIndex].username = value.username;
-        if (value.password) db.users[userIndex].password = await bcrypt.hash(value.password, 10);
-        if (value.role) db.users[userIndex].role = value.role;
+        if (value.username) {
+            const usernameTaken = sqlite
+                .prepare("SELECT 1 FROM users WHERE username = ? AND id <> ?")
+                .get(value.username, id);
+            if (usernameTaken || validUsers.some(u => u.username === value.username)) {
+                return res.status(400).json({ error: "Usuário já existe" });
+            }
+            sqlite.prepare("UPDATE users SET username = ? WHERE id = ?").run(value.username, id);
+        }
+        if (value.password) {
+            const hashed = await bcrypt.hash(value.password, 10);
+            sqlite.prepare("UPDATE users SET password = ? WHERE id = ?").run(hashed, id);
+        }
+        if (value.role) {
+            sqlite.prepare("UPDATE users SET role = ? WHERE id = ?").run(value.role, id);
+        }
 
-        await saveDB(db);
-
-        const { password, ...safeUser } = db.users[userIndex];
+        const updatedUser = sqlite
+            .prepare("SELECT id, username, role, createdAt FROM users WHERE id = ?")
+            .get(id);
+        const { password, ...safeUser } = updatedUser;
         res.json(safeUser);
     } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
@@ -651,15 +778,10 @@ app.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
             return res.status(403).json({ error: "Não é possível excluir usuários de ambiente via interface." });
         }
 
-        const db = await getDB();
-        const initialLength = db.users.length;
-        db.users = db.users.filter(u => u.id !== id);
-
-        if (db.users.length === initialLength) {
+        const result = sqlite.prepare("DELETE FROM users WHERE id = ?").run(id);
+        if (!result?.changes) {
             return res.status(404).json({ error: "Usuário não encontrado" });
         }
-
-        await saveDB(db);
         res.json({ message: "Usuário removido com sucesso" });
     } catch (error) {
         console.error("Erro ao excluir usuário:", error);
@@ -670,8 +792,10 @@ app.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
 // 📊 Rota para buscar avaliações
 app.get("/avaliacoes", requireAuth, async (req, res) => {
     try {
-        const db = await getDB();
-        res.json(db.avaliacoes);
+        const avaliacoes = sqlite
+            .prepare("SELECT id, avaliacao, sugestao, notaGeral, data, ip FROM avaliacoes ORDER BY id DESC")
+            .all();
+        res.json(avaliacoes);
     } catch (error) {
         res.status(500).json({ error: "Erro ao buscar avaliações" });
     }
@@ -679,8 +803,17 @@ app.get("/avaliacoes", requireAuth, async (req, res) => {
 
 app.get("/questionarios", requireAuth, async (req, res) => {
     try {
-        const db = await getDB();
-        res.json(db.questionarios);
+        const rows = sqlite.prepare("SELECT payload_json FROM questionarios ORDER BY id DESC").all();
+        const questionarios = rows
+            .map(r => {
+                try {
+                    return JSON.parse(r.payload_json)
+                } catch {
+                    return null
+                }
+            })
+            .filter(Boolean);
+        res.json(questionarios);
     } catch (error) {
         res.status(500).json({ error: "Erro ao buscar questionários" });
     }
@@ -689,8 +822,16 @@ app.get("/questionarios", requireAuth, async (req, res) => {
 // 📈 Estatísticas agregadas
 app.get("/estatisticas", requireAuth, async (req, res) => {
     try {
-        const db = await getDB()
-        const avaliacoes = db.questionarios
+        const rows = sqlite.prepare("SELECT payload_json FROM questionarios").all();
+        const avaliacoes = rows
+            .map(r => {
+                try {
+                    return JSON.parse(r.payload_json)
+                } catch {
+                    return null
+                }
+            })
+            .filter(Boolean);
         const total = avaliacoes.length
 
         if (total === 0) {

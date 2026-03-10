@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext } from 'react';
-// eslint-disable-next-line import/no-unresolved
 import { translations } from '../constants/translations';
 
 const LanguageContext = createContext();

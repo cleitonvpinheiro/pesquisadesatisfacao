@@ -1,7 +1,5 @@
-// eslint-disable-next-line import/no-unresolved
 import React, { useContext, useState } from 'react';
-// eslint-disable-next-line import/no-unresolved
-import { AuthContext } from '../src/context/AuthContext';
+import { AuthContext } from '../context/AuthContext';
 import { Text, TextInput, TouchableOpacity, View, StyleSheet, Alert } from 'react-native';
 
 export default function LoginScreen() {

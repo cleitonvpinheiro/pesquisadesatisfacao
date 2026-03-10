@@ -34,11 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
             classificacao = 'Ruim';
             classe = 'classificacao-ruim';
             emoji = '😞';
-        } else if (numeroNota >= 4 && numeroNota <= 6) {
+        } else if (numeroNota >= 4 && numeroNota <= 7) {
             classificacao = 'Bom';
             classe = 'classificacao-bom';
             emoji = '😃';
-        } else if (numeroNota >= 7 && numeroNota <= 10) {
+        } else if (numeroNota >= 8 && numeroNota <= 10) {
             classificacao = 'Excelente';
             classe = 'classificacao-excelente';
             emoji = '😊';

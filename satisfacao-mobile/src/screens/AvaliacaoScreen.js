@@ -1,9 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-// eslint-disable-next-line import/no-unresolved
 import { useLanguage } from '../context/LanguageContext';
-// eslint-disable-next-line import/no-unresolved
 import LanguageSelector from '../components/LanguageSelector';
 
 export default function AvaliacaoScreen() {

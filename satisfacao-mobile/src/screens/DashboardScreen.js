@@ -1,32 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { View, Dimensions } from 'react-native';
+import { View, Dimensions, StyleSheet } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
-// eslint-disable-next-line import/no-unresolved
-import api from '../src/services/api';
+import api from '../services/api';
 
 export default function DashboardScreen() {
     const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
     const screenWidth = Dimensions.get('window').width;
     useEffect(() => {
         async function load() {
-          const response = await api.get('/avaliacao');
-          setData(response.data);
-          setLoading(false);
-        
-        setData([
-            { name: 'Positivo', population: 100, color: 'green', legendFontColor: '#7F7F7F', legendFontSize: 15 },
-            { name: 'Negativo', population: 50, color: 'red', legendFontColor: '#7F7F7F', legendFontSize: 15 },
-            { name: 'Bom', population: 30, color: 'yellow', legendFontColor: '#7F7F7F', legendFontSize: 15 },
-        ])
-    }
+            try {
+                const response = await api.get('/avaliacao');
+                setData(response.data);
+            } catch {
+                setData([
+                    { name: 'Positivo', population: 100, color: 'green', legendFontColor: '#7F7F7F', legendFontSize: 15 },
+                    { name: 'Negativo', population: 50, color: 'red', legendFontColor: '#7F7F7F', legendFontSize: 15 },
+                    { name: 'Bom', population: 30, color: 'yellow', legendFontColor: '#7F7F7F', legendFontSize: 15 },
+                ]);
+            }
+        }
 
-    load();
+        load();
 
     }, []);
 
     return (
-        // eslint-disable-next-line no-undef
         <View style={styles.container}>
             <PieChart
                 data={data}
@@ -51,3 +49,12 @@ export default function DashboardScreen() {
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#faab45',
+    },
+});

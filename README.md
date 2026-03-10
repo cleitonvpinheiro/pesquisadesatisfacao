@@ -1,111 +1,69 @@
-# Sistema de Avaliação de Satisfação
+# 📊 Sistema de Pesquisa de Satisfação - Família Madalosso
 
-Este projeto é um sistema completo para coleta e análise de avaliações de satisfação, composto por um frontend web, um backend em Node.js e um aplicativo mobile (React Native).
+Bem-vindo à documentação oficial do **Sistema de Pesquisa de Satisfação**. Esta plataforma foi desenvolvida para coletar, gerenciar e analisar feedbacks de clientes de forma ágil, intuitiva e segura, integrando totens de autoatendimento, aplicativo móvel e um painel administrativo completo.
 
-## 🚀 Funcionalidades
+---
 
-### 📊 **Dashboard Administrativo**
-- **Visualização em Tempo Real**: Estatísticas e gráficos interativos de satisfação.
-- **Configuração de Questionário**: Interface para adicionar, remover e editar perguntas do formulário dinamicamente (Acesso para Admin e Gestor).
-- **Gestão de Usuários**: Sistema completo para criação, edição e remoção de usuários com validação robusta.
-- **Filtros Avançados**: Interface aprimorada com botões intuitivos para filtragem e exportação de dados.
-- **Gestão de Idiomas**: Interface traduzida para Português, Inglês e Espanhol.
-- **Temas**: Suporte a modo claro e escuro.
+## 🚀 Visão Geral do Produto
 
-### 🔐 **Sistema de Autenticação**
-- Login seguro com suporte a LDAP e autenticação local.
-- Sessões gerenciadas com Cookies `httpOnly`.
-- Controle de acesso baseado em roles (Admin, Gestor, Usuário).
+O sistema é composto por três módulos principais integrados:
 
-### 📝 **Formulários de Avaliação (Web)**
-- Interface intuitiva para coleta de feedback.
-- **Internacionalização (i18n)**: Suporte completo a PT, EN e ES com seletor de idiomas unificado.
-- **Design Responsivo**: Layout adaptável com controles modernos (Pill-style).
+1.  **Totem de Autoatendimento (Web)**: Interface rápida para clientes registrarem sua satisfação no local.
+2.  **Aplicativo Móvel (Android)**: Versão portátil para tablets e celulares, ideal para pesquisas volantes.
+3.  **Painel Administrativo (Dashboard)**: Central de controle para gestores visualizarem dados e configurarem o sistema.
 
-### 📱 **Aplicativo Mobile**
-- Projeto React Native (Expo) localizado na pasta `satisfacao-mobile`.
-- Interface otimizada para tablets e dispositivos móveis.
-- Sincronização com o backend para envio de avaliações.
+---
 
-## 🏗️ Arquitetura do Projeto
+## ✨ Funcionalidades Principais
 
-```
-satisfacao/
-├── backend/                # Servidor Node.js/Express
-│   ├── server.js           # API REST
-│   ├── database.json       # Banco de dados local (ignorado no git)
-│   └── database.example.json # Template do banco de dados
-├── satisfacao-mobile/      # Projeto React Native (Expo)
-│   ├── app/                # Rotas e telas (Expo Router)
-│   └── ...
-├── assets/                 # Imagens e recursos estáticos
-├── index.html              # Página inicial (Seleção de satisfação)
-├── formulario-refeitorio.html # Formulário detalhado
-├── login.html              # Página de login administrativo
-├── dashboard.html          # Painel de controle
-├── translations.js         # Central de traduções (PT, EN, ES)
-├── *.js                    # Lógica do frontend
-├── *.css                   # Estilos globais e de componentes
-└── README.md               # Documentação
-```
+### 1. Coleta de Feedback (Totem e Mobile)
+*   **Avaliação Rápida**: Interface simplificada com 3 níveis de satisfação (Excelente, Bom, Ruim).
+*   **Pesquisa Detalhada**: Formulário completo para avaliar aspectos específicos (Qualidade, Variedade, Temperatura, Limpeza, Atendimento).
+*   **Multilíngue**: Suporte instantâneo para **Português**, **Inglês** e **Espanhol**, atendendo turistas e clientes internacionais.
+*   **Identidade Visual**: Design moderno e personalizado com a marca Família Madalosso.
 
-## 🛠️ Tecnologias Utilizadas
+### 2. Painel Administrativo (Gestão)
+*   **Dashboards em Tempo Real**: Gráficos interativos que mostram a evolução da satisfação dia a dia.
+*   **Indicadores de Desempenho (KPIs)**: Acompanhe médias de qualidade, limpeza e atendimento.
+*   **Filtros Inteligentes**: Analise dados por data, período ou tipo de refeição (Almoço/Jantar).
+*   **Relatórios**: Visualização clara dos comentários e sugestões dos clientes.
 
-### Backend
-- **Node.js** & **Express**: API REST.
-- **Segurança**: `helmet`, `cors`, `express-rate-limit`.
-- **Autenticação**: `passport`, `bcrypt`, `cookie-parser`.
-- **Persistência**: Arquivo JSON local (`fs-extra`).
+### 3. Configuração e Segurança
+*   **Gestão de Usuários**: Controle quem acessa o sistema com perfis diferenciados (Administrador, Gestor, Usuário).
+*   **Editor de Pesquisas**: Adicione ou remova perguntas do formulário dinamicamente, sem precisar de programação.
+*   **Segurança de Dados**:
+    *   Senhas criptografadas.
+    *   Proteção contra acessos não autorizados.
+    *   Sistema de login seguro.
 
-### Frontend Web
-- **HTML5/CSS3**: Layout moderno com CSS Variables para temas.
-- **JavaScript (Vanilla)**: Lógica leve e eficiente.
-- **Chart.js**: Visualização de dados no dashboard.
+---
 
-### Mobile
-- **React Native** & **Expo**: Desenvolvimento multiplataforma.
-- **Expo Router**: Navegação baseada em arquivos.
+## 📱 Guia de Instalação (Aplicativo Android)
 
-## ⚙️ Configuração e Instalação
+Para instalar o aplicativo nos tablets ou celulares da equipe:
 
-### Pré-requisitos
-- Node.js (v18+)
-- npm ou yarn
+1.  Solicite o arquivo instalador **APK** à equipe de TI.
+2.  No dispositivo Android, autorize a instalação de "Fontes Desconhecidas" (se necessário).
+3.  Abra o arquivo e siga as instruções na tela.
+4.  Ao abrir o app, conecte-se à rede Wi-Fi interna para sincronizar os dados.
 
-### 1. Instalação do Backend e Frontend Web
-Na raiz do projeto:
+---
 
-```bash
-# Instalar dependências do backend
-cd backend
-npm install
-# Copiar o banco de dados de exemplo
-cp database.example.json database.json
-# Voltar para a raiz e iniciar
-cd ..
-npm start
-```
+## 💻 Acesso ao Painel Administrativo
 
-### 2. Instalação do Mobile App
-Para rodar o aplicativo móvel:
+O painel pode ser acessado de qualquer computador na rede interna:
 
-```bash
-cd satisfacao-mobile
-npm install
-npx expo start
-```
+1.  **Endereço**: Acesse via navegador (Chrome/Edge) no endereço fornecido pela TI.
+2.  **Login**: Utilize suas credenciais de acesso.
+    *   *Administrador*: Acesso total a configurações e usuários.
+    *   *Gestor*: Acesso a relatórios e configuração de formulários.
+    *   *Usuário*: Visualização de dashboards.
 
-## 🔑 Credenciais Padrão (Ambiente de Desenvolvimento)
+---
 
-O arquivo `.env` no backend define as credenciais iniciais:
+## 📞 Suporte
 
-- **Admin**: `admin` / `admin`
-- **Gestor**: `gestor` / `gestor`
-- **Usuário**: `usuario` / `usuario`
+Em caso de dúvidas, problemas técnicos ou necessidade de novos usuários, entre em contato com o administrador do sistema.
 
-## 🌍 Internacionalização
-
-O sistema utiliza o arquivo `translations.js` como fonte única de verdade para textos.
-- **Adicionar novo idioma**: Basta adicionar uma nova chave no objeto `translations` em `translations.js`.
-- **Uso no HTML**: Adicione o atributo `data-translate="CHAVE"` aos elementos.
-- **Uso no JS**: Utilize a função global `t('CHAVE')`.
+---
+*Desenvolvido para Família Madalosso - Excelência em servir.*

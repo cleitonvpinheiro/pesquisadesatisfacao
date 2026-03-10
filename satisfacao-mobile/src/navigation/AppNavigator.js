@@ -1,10 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-// eslint-disable-next-line import/no-unresolved
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-// eslint-disable-next-line import/no-unresolved
 import AvaliacaoScreen from '../screens/AvaliacaoScreen';
-// eslint-disable-next-line import/no-unresolved
 import QuestionarioScreen from '../screens/QuestionarioScreen';
 
 const Stack = createNativeStackNavigator();

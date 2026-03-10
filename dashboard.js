@@ -53,9 +53,9 @@ function atualizarGraficos(avaliacoes, questionarios) {
     if (q.notaGeral !== null && q.notaGeral !== undefined) {
       if (q.notaGeral <= 3) {
         contagem.ruim++;
-      } else if (q.notaGeral >= 4 && q.notaGeral <= 6) {
+      } else if (q.notaGeral >= 4 && q.notaGeral <= 7) {
         contagem.bom++;
-      } else if (q.notaGeral >= 7 && q.notaGeral <= 10) {
+      } else if (q.notaGeral >= 8 && q.notaGeral <= 10) {
         contagem.excelente++;
       }
     }
@@ -71,7 +71,7 @@ function atualizarGraficos(avaliacoes, questionarios) {
         backgroundColor: ["#4CAF50", "#FFC107", "#F44336"]
       }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 
   // Gráfico 2 — Notas gerais
@@ -85,7 +85,7 @@ function atualizarGraficos(avaliacoes, questionarios) {
 
 const coresNotas = Array.from({ length: 11 }, (_, i) => {
   if (i <= 3) return "#F44336"; // notas baixas → vermelho
-  if (i <= 6) return "#FFC107"; // notas médias → amarelo
+  if (i <= 7) return "#FFC107"; // notas médias → amarelo
   return "#4CAF50";             // notas altas → verde
 });
 
@@ -102,6 +102,7 @@ graficoNotas = new Chart(ctx2, {
   },
   options: {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: true,
@@ -147,9 +148,9 @@ function renderizarSugestoes(avaliacoes, questionarios) {
     if (q.notaGeral !== null && q.notaGeral !== undefined) {
       if (q.notaGeral <= 3) {
         classificacaoQuestionario = "Ruim";
-      } else if (q.notaGeral >= 4 && q.notaGeral <= 6) {
+      } else if (q.notaGeral >= 4 && q.notaGeral <= 7) {
         classificacaoQuestionario = "Bom";
-      } else if (q.notaGeral >= 7 && q.notaGeral <= 10) {
+      } else if (q.notaGeral >= 8 && q.notaGeral <= 10) {
         classificacaoQuestionario = "Excelente";
       }
     }
@@ -174,24 +175,41 @@ function renderizarSugestoes(avaliacoes, questionarios) {
       if (q.notaGeral <= 3) {
         classificacao = "Ruim";
         classeCSS = "ruim";
-      } else if (q.notaGeral >= 4 && q.notaGeral <= 6) {
+      } else if (q.notaGeral >= 4 && q.notaGeral <= 7) {
         classificacao = "Bom";
         classeCSS = "bom";
-      } else if (q.notaGeral >= 7 && q.notaGeral <= 10) {
+      } else if (q.notaGeral >= 8 && q.notaGeral <= 10) {
         classificacao = "Excelente";
         classeCSS = "excelente";
       }
     }
     
     li.className = `sugestao-item ${classeCSS}`;
-    li.innerHTML = `
-      <div>
-        <strong>${classificacao}</strong><br>
-        ${q.sugestao ? `<em>Sugestão:</em> ${q.sugestao}<br>` : ""}
-        <small>Nota geral: ${q.notaGeral}</small>
-      </div>
-      <span class="data">${new Date(q.data).toLocaleString()}</span>
-    `;
+    const contentDiv = document.createElement('div');
+
+    const strong = document.createElement('strong');
+    strong.textContent = classificacao;
+    contentDiv.appendChild(strong);
+    contentDiv.appendChild(document.createElement('br'));
+
+    if (q.sugestao) {
+      const em = document.createElement('em');
+      em.textContent = 'Sugestão:';
+      contentDiv.appendChild(em);
+      contentDiv.appendChild(document.createTextNode(' ' + String(q.sugestao)));
+      contentDiv.appendChild(document.createElement('br'));
+    }
+
+    const small = document.createElement('small');
+    small.textContent = `Nota geral: ${q.notaGeral}`;
+    contentDiv.appendChild(small);
+
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'data';
+    dateSpan.textContent = new Date(q.data).toLocaleString();
+
+    li.appendChild(contentDiv);
+    li.appendChild(dateSpan);
     lista.appendChild(li);
   });
 }
@@ -212,9 +230,9 @@ function exportarParaExcel() {
     if (q.notaGeral !== null && q.notaGeral !== undefined) {
       if (q.notaGeral <= 3) {
         classificacaoQuestionario = "Ruim";
-      } else if (q.notaGeral >= 4 && q.notaGeral <= 6) {
+      } else if (q.notaGeral >= 4 && q.notaGeral <= 7) {
         classificacaoQuestionario = "Bom";
-      } else if (q.notaGeral >= 7 && q.notaGeral <= 10) {
+      } else if (q.notaGeral >= 8 && q.notaGeral <= 10) {
         classificacaoQuestionario = "Excelente";
       }
     }
@@ -229,9 +247,9 @@ function exportarParaExcel() {
     if (q.notaGeral !== null && q.notaGeral !== undefined) {
       if (q.notaGeral <= 3) {
         classificacao = "Ruim";
-      } else if (q.notaGeral >= 4 && q.notaGeral <= 6) {
+      } else if (q.notaGeral >= 4 && q.notaGeral <= 7) {
         classificacao = "Bom";
-      } else if (q.notaGeral >= 7 && q.notaGeral <= 10) {
+      } else if (q.notaGeral >= 8 && q.notaGeral <= 10) {
         classificacao = "Excelente";
       }
     }
@@ -301,17 +319,43 @@ function applyPermissions() {
         const roleName = (typeof t === 'function' ? t(roleKey) : user.role) || user.role;
         const logoutText = (typeof t === 'function' ? t('logout') : 'Sair');
         
-        userInfoDisplay.innerHTML = `
-            <div class="header-user-profile">
-                <div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;">
-                    <span class="user-name">${user.username}</span>
-                    <span class="user-role-badge" style="font-size: 0.75rem; padding: 1px 6px; background-color: var(--cor-primaria); color: white; border-radius: 4px;">${roleName}</span>
-                </div>
-                <button onclick="logout()" class="btn-logout-icon" title="${logoutText}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                </button>
-            </div>
-        `;
+        userInfoDisplay.textContent = '';
+
+        const profile = document.createElement('div');
+        profile.className = 'header-user-profile';
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.flexDirection = 'column';
+        right.style.alignItems = 'flex-end';
+        right.style.lineHeight = '1.2';
+
+        const userName = document.createElement('span');
+        userName.className = 'user-name';
+        userName.textContent = user.username;
+
+        const roleBadge = document.createElement('span');
+        roleBadge.className = 'user-role-badge';
+        roleBadge.style.fontSize = '0.75rem';
+        roleBadge.style.padding = '1px 6px';
+        roleBadge.style.backgroundColor = 'var(--cor-primaria)';
+        roleBadge.style.color = 'white';
+        roleBadge.style.borderRadius = '4px';
+        roleBadge.textContent = roleName;
+
+        right.appendChild(userName);
+        right.appendChild(roleBadge);
+
+        const btnLogout = document.createElement('button');
+        btnLogout.className = 'btn-logout-icon';
+        btnLogout.title = logoutText;
+        btnLogout.type = 'button';
+        btnLogout.addEventListener('click', () => logout());
+        btnLogout.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
+
+        profile.appendChild(right);
+        profile.appendChild(btnLogout);
+        userInfoDisplay.appendChild(profile);
     }
 
     // Permissões para Configuração (Admin ou Gestor)
@@ -407,7 +451,13 @@ function renderQuestionsList() {
     header.style.display = 'flex';
     header.style.justifyContent = 'space-between';
     header.style.marginBottom = '5px';
-    header.innerHTML = `<strong>${q.type === 'stars' ? t('typeStars') : t('typeMulti')}</strong> <small style="opacity:0.7">${t('labelId')} ${q.id}</small>`;
+    const leftTitle = document.createElement('strong');
+    leftTitle.textContent = q.type === 'stars' ? t('typeStars') : t('typeMulti');
+    const rightId = document.createElement('small');
+    rightId.style.opacity = '0.7';
+    rightId.textContent = `${t('labelId')} ${q.id}`;
+    header.appendChild(leftTitle);
+    header.appendChild(rightId);
     item.appendChild(header);
 
     // Label
@@ -590,21 +640,58 @@ function renderUsersTable(users) {
         const originLabel = user.origin === 'env' ? t('originEnv') : t('originDB');
         const isEnvUser = user.origin === 'env';
 
-        tr.innerHTML = `
-            <td>${user.username}</td>
-            <td><span class="badge ${user.role === 'admin' ? 'badge-admin' : user.role === 'manager' ? 'badge-manager' : 'badge-user'}">${roleLabel}</span></td>
-            <td>${originLabel}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn-icon btn-edit" ${isEnvUser ? 'disabled title="Usuários de sistema não podem ser editados"' : ''} onclick="openUserModal('${user.id}', '${user.username}', '${user.role}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
-                    <button class="btn-icon btn-delete" ${isEnvUser ? 'disabled title="Usuários de sistema não podem ser excluídos"' : ''} onclick="deleteUser('${user.id}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>
-                </div>
-            </td>
-        `;
+        const tdUsername = document.createElement('td');
+        tdUsername.textContent = user.username;
+
+        const tdRole = document.createElement('td');
+        const roleBadge = document.createElement('span');
+        roleBadge.className = `badge ${
+            user.role === 'admin'
+                ? 'badge-admin'
+                : user.role === 'manager'
+                    ? 'badge-manager'
+                    : 'badge-user'
+        }`;
+        roleBadge.textContent = roleLabel;
+        tdRole.appendChild(roleBadge);
+
+        const tdOrigin = document.createElement('td');
+        tdOrigin.textContent = originLabel;
+
+        const tdActions = document.createElement('td');
+        const actions = document.createElement('div');
+        actions.className = 'action-buttons';
+
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'btn-icon btn-edit';
+        btnEdit.type = 'button';
+        btnEdit.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+        if (isEnvUser) {
+            btnEdit.disabled = true;
+            btnEdit.title = 'Usuários de sistema não podem ser editados';
+        } else {
+            btnEdit.addEventListener('click', () => window.openUserModal(user.id, user.username, user.role));
+        }
+
+        const btnDelete = document.createElement('button');
+        btnDelete.className = 'btn-icon btn-delete';
+        btnDelete.type = 'button';
+        btnDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+        if (isEnvUser) {
+            btnDelete.disabled = true;
+            btnDelete.title = 'Usuários de sistema não podem ser excluídos';
+        } else {
+            btnDelete.addEventListener('click', () => window.deleteUser(user.id));
+        }
+
+        actions.appendChild(btnEdit);
+        actions.appendChild(btnDelete);
+        tdActions.appendChild(actions);
+
+        tr.appendChild(tdUsername);
+        tr.appendChild(tdRole);
+        tr.appendChild(tdOrigin);
+        tr.appendChild(tdActions);
         tbody.appendChild(tr);
     });
 }

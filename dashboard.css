@@ -44,10 +44,11 @@ body.dark-mode {
   padding: 15px 30px;
   background-color: var(--cor-branca);
   box-shadow: var(--sombra-suave);
-  margin-bottom: 30px;
+  margin: 0 auto 24px;
   border-radius: var(--radius);
   flex-wrap: wrap; /* Allow wrapping for mobile */
   gap: 15px;
+  max-width: 1400px;
 }
 
 .header-brand {
@@ -255,10 +256,10 @@ body {
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: auto;
   background: var(--cor-branca);
-  padding: 25px;
+  padding: 28px;
   border-radius: var(--radius);
   box-shadow: var(--sombra);
 }
@@ -269,6 +270,8 @@ body {
 h1 {
   text-align: center;
   color: var(--cor-texto);
+  font-size: 2.1rem;
+  margin: 18px 0 12px;
 }
 
 h2 {
@@ -335,22 +338,39 @@ h3 {
    GRÁFICOS
    ============================================================ */
 .graficos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(360px, 1fr));
+  gap: 24px;
+  align-items: stretch;
 }
 
 .card {
   background: var(--cor-branca);
   color: var(--cor-texto);
-  padding: 20px;
+  padding: 22px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 48%;
-  min-width: 300px;
+  width: auto;
+  min-width: 0;
   text-align: center;
-  flex: 1 1 300px; /* Flexibilidade para responsividade */
+  display: flex;
+  flex-direction: column;
+  min-height: 440px;
+}
+
+.card canvas {
+  width: 100% !important;
+  height: 340px !important;
+}
+
+@media (max-width: 900px) {
+  .graficos {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: 420px;
+  }
 }
 
 /* ============================================================
@@ -461,7 +481,7 @@ h3 {
 #lista-sugestoes {
   list-style: none;
   padding: 0;
-  max-height: 400px;
+  max-height: 520px;
   overflow-y: auto;
   border: 1px solid #eee;
   border-radius: 5px;

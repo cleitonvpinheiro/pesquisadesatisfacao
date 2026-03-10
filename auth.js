@@ -28,16 +28,15 @@ function initAuth() {
 // Função para verificar se o usuário está autenticado
 function checkAuth() {
     const token = localStorage.getItem('authToken');
-    
-    if (!token) {
-        redirectToLogin();
-        return Promise.resolve(false);
+
+    const headers = {};
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return fetch(getApiUrl('/verify-auth'), {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
+        headers,
+        credentials: 'include'
     })
     .then(response => {
         if (response.ok) {
@@ -84,16 +83,14 @@ function redirectToLogin() {
 function logout() {
     const token = localStorage.getItem('authToken');
     
-    if (token) {
-        // Chama endpoint de logout no backend
-        fetch(getApiUrl('/logout'), {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        .catch(error => console.error('Erro no logout:', error));
-    }
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    fetch(getApiUrl('/logout'), {
+        method: 'POST',
+        headers,
+        credentials: 'include'
+    }).catch(error => console.error('Erro no logout:', error));
     
     // Remove dados locais
     localStorage.removeItem('authToken');
@@ -116,13 +113,12 @@ function authenticatedFetch(url, options = {}) {
         finalUrl = getApiUrl('/' + url);
     }
     
-    const defaultHeaders = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-    };
+    const defaultHeaders = { 'Content-Type': 'application/json' };
+    if (token) defaultHeaders['Authorization'] = `Bearer ${token}`;
     
     const finalOptions = {
         ...options,
+        credentials: 'include',
         headers: {
             ...defaultHeaders,
             ...options.headers

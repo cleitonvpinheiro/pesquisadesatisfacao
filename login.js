@@ -54,9 +54,8 @@ function handleLogin(event) {
     authenticateUser(username, password)
         .then(response => {
             if (response.success) {
-                // Salva o token de sessão
-                localStorage.setItem('authToken', response.token);
                 localStorage.setItem('userInfo', JSON.stringify(response.user));
+                localStorage.removeItem('authToken');
                 
                 // Redireciona para o dashboard
                 window.location.href = 'dashboard.html';
@@ -78,6 +77,7 @@ function handleLogin(event) {
 function authenticateUser(username, password) {
     return fetch(getApiUrl('/login'), {
         method: 'POST',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json'
         },
@@ -101,12 +101,13 @@ function authenticateUser(username, password) {
 // Função para verificar se o token ainda é válido
 function verifyToken() {
     const token = localStorage.getItem('authToken');
-    if (!token) return Promise.resolve(false);
-    
+
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     return fetch(getApiUrl('/verify-auth'), {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
+        headers,
+        credentials: 'include'
     })
     .then(response => {
         if (response.ok) {
@@ -138,9 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Função para verificar se o usuário está logado
 function isLoggedIn() {
-    const token = localStorage.getItem('authToken');
-    if (!token) return Promise.resolve(false);
-    
     return verifyToken();
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import React, { useState, useEffect } from 'react';
 import { 
     View, 
@@ -13,9 +12,7 @@ import {
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import api from '../services/api';
-// eslint-disable-next-line import/no-unresolved
 import { useLanguage } from '../context/LanguageContext';
-// eslint-disable-next-line import/no-unresolved
 import LanguageSelector from '../components/LanguageSelector';
 
 export default function QuestionarioScreen() {
@@ -25,6 +22,8 @@ export default function QuestionarioScreen() {
     const { avaliacaoInicial } = route.params || {};
 
     const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    const [showThankYou, setShowThankYou] = useState(false);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
 
@@ -32,48 +31,45 @@ export default function QuestionarioScreen() {
     const [sugestao, setSugestao] = useState('');
 
     useEffect(() => {
-        fetchConfig();
-    }, []);
+        const fetchConfig = async () => {
+            try {
+                const response = await api.get('/config/form');
+                if (response.data && response.data.questions) {
+                    const enabledQuestions = response.data.questions.filter(q => q.enabled);
+                    setQuestions(enabledQuestions);
 
-    const fetchConfig = async () => {
-        try {
-            const response = await api.get('/config/form');
-            if (response.data && response.data.questions) {
-                // Filtra apenas as habilitadas
-                const enabledQuestions = response.data.questions.filter(q => q.enabled);
-                setQuestions(enabledQuestions);
-                
-                // Inicializa respostas
+                    const initialAnswers = {};
+                    enabledQuestions.forEach(q => {
+                        initialAnswers[q.id] = q.type === 'stars' ? 0 : '';
+                    });
+                    setAnswers(initialAnswers);
+                }
+            } catch (error) {
+                if (__DEV__) console.error('Erro ao carregar configurações do formulário:', error);
+                Alert.alert(t('connectionError'), 'Usando formulário padrão.');
+                const defaultQuestions = [
+                    { id: "horario", type: "radio", label: t('mealSchedule'), options: ['Café', 'Almoço', 'Jantar'] },
+                    { id: "qualidade", type: "stars", label: t('mealQuality') },
+                    { id: "variedade", type: "stars", label: t('mealVariety') },
+                    { id: "cardapio", type: "radio", label: t('menuNeeds'), options: ['Sim', 'Parcialmente', 'Não'] },
+                    { id: "temperatura", type: "stars", label: t('foodTemperature') },
+                    { id: "limpeza", type: "stars", label: t('cafeteriaClean') },
+                    { id: "organizacao", type: "stars", label: t('comfortOrganization') },
+                    { id: "espera", type: "radio", label: t('waitingTime'), options: ['Rápido', 'Razoável', 'Demorado'] }
+                ];
+                setQuestions(defaultQuestions);
                 const initialAnswers = {};
-                enabledQuestions.forEach(q => {
+                defaultQuestions.forEach(q => {
                     initialAnswers[q.id] = q.type === 'stars' ? 0 : '';
                 });
                 setAnswers(initialAnswers);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Erro ao carregar configurações do formulário:', error);
-            Alert.alert(t('connectionError'), 'Usando formulário padrão.');
-            // Fallback para perguntas padrão se falhar
-            const defaultQuestions = [
-                { id: "horario", type: "radio", label: t('mealSchedule'), options: ['Café', 'Almoço', 'Jantar'] },
-                { id: "qualidade", type: "stars", label: t('mealQuality') },
-                { id: "variedade", type: "stars", label: t('mealVariety') },
-                { id: "cardapio", type: "radio", label: t('menuNeeds'), options: ['Sim', 'Parcialmente', 'Não'] },
-                { id: "temperatura", type: "stars", label: t('foodTemperature') },
-                { id: "limpeza", type: "stars", label: t('cafeteriaClean') },
-                { id: "organizacao", type: "stars", label: t('comfortOrganization') },
-                { id: "espera", type: "radio", label: t('waitingTime'), options: ['Rápido', 'Razoável', 'Demorado'] }
-            ];
-            setQuestions(defaultQuestions);
-            const initialAnswers = {};
-            defaultQuestions.forEach(q => {
-                initialAnswers[q.id] = q.type === 'stars' ? 0 : '';
-            });
-            setAnswers(initialAnswers);
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
+
+        fetchConfig();
+    }, [t]);
 
     const handleAnswer = (questionId, value) => {
         setAnswers(prev => ({
@@ -152,17 +148,18 @@ export default function QuestionarioScreen() {
     };
 
     const handleSubmit = async () => {
-        console.log('Iniciando envio do questionário...');
+        if (sending || showThankYou) return;
+        if (__DEV__) console.log('Iniciando envio do questionário...');
         
         // Validações básicas (adaptadas para campos dinâmicos se existirem)
         if (questions.find(q => q.id === 'horario') && !answers['horario']) {
-            console.log('Validação falhou: Horário não selecionado');
+            if (__DEV__) console.log('Validação falhou: Horário não selecionado');
             Alert.alert(t('attention'), t('selectSchedule'));
             return;
         }
 
         if (!notaGeral) {
-            console.log('Validação falhou: Nota geral não selecionada');
+            if (__DEV__) console.log('Validação falhou: Nota geral não selecionada');
             Alert.alert(t('attention'), t('selectOverallRating'));
             return;
         }
@@ -176,12 +173,13 @@ export default function QuestionarioScreen() {
         const menorNota = starAnswers.length > 0 ? Math.min(...starAnswers) : 5;
         
         if ((avaliacaoInicial === 'ruim' || menorNota <= 2) && !sugestao.trim()) {
-            console.log('Validação falhou: Sugestão obrigatória para nota baixa');
+            if (__DEV__) console.log('Validação falhou: Sugestão obrigatória para nota baixa');
             Alert.alert(t('attention'), t('suggestionRequired'));
             return;
         }
 
         try {
+            setSending(true);
             const payload = {
                 avaliacao: avaliacaoInicial,
                 sugestao,
@@ -189,31 +187,34 @@ export default function QuestionarioScreen() {
                 ...answers // Espalha as respostas dinâmicas (horario, cardapio, qualidade, etc.)
             };
 
-            console.log('Dados a serem enviados:', payload);
+            if (__DEV__) console.log('Dados a serem enviados:', payload);
 
             // Envia questionário completo (backend espera tudo aqui)
             const response = await api.post('/questionario', payload);
 
-            console.log('Resposta do servidor:', response.data);
-            console.log('Status da resposta:', response.status);
+            if (__DEV__) console.log('Resposta do servidor:', response.data);
+            if (__DEV__) console.log('Status da resposta:', response.status);
 
             if (response.status === 200 || response.status === 201) {
-                // Navegação imediata para a tela inicial
-                console.log('Navegando de volta para Avaliacao');
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Avaliacao' }],
-                });
+                if (__DEV__) console.log('Navegando de volta para Avaliacao');
+                setShowThankYou(true);
+                setTimeout(() => {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Avaliacao' }],
+                    });
+                }, 1200);
             } else {
                  throw new Error('Erro ao enviar: Status ' + response.status);
             }
         } catch (error) {
-            console.error('Erro ao enviar:', error);
+            if (__DEV__) console.error('Erro ao enviar:', error);
             if (error.response) {
-                console.error('Dados do erro:', error.response.data);
-                console.error('Status do erro:', error.response.status);
+                if (__DEV__) console.error('Dados do erro:', error.response.data);
+                if (__DEV__) console.error('Status do erro:', error.response.status);
             }
             Alert.alert(t('connectionError'), t('connectionErrorMessage'));
+            setSending(false);
         }
     };
 
@@ -226,10 +227,20 @@ export default function QuestionarioScreen() {
         );
     }
 
+    if (showThankYou) {
+        return (
+            <View style={styles.thankYouContainer}>
+                <ActivityIndicator size="large" color="#007bff" />
+                <Text style={styles.thankYouTitle}>{t('thankYouResponse')}</Text>
+                <Text style={styles.thankYouText}>{t('thankYouMessage')}</Text>
+            </View>
+        );
+    }
+
     return (
         <ScrollView style={styles.container}>
             <View style={styles.headerContainer}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <TouchableOpacity disabled={sending} onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Text style={styles.backButtonText}>←</Text>
                 </TouchableOpacity>
                 <View style={styles.languageContainer}>
@@ -276,7 +287,7 @@ export default function QuestionarioScreen() {
                 onChangeText={setSugestao}
             />
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <TouchableOpacity disabled={sending} style={[styles.submitButton, sending && styles.submitButtonDisabled]} onPress={handleSubmit}>
                 <Text style={styles.submitButtonText}>{t('submit')}</Text>
             </TouchableOpacity>
             
@@ -290,6 +301,28 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
         backgroundColor: '#faab45',
+    },
+    thankYouContainer: {
+        flex: 1,
+        padding: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#faab45',
+    },
+    thankYouTitle: {
+        marginTop: 16,
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#000',
+        fontFamily: 'Poppins_700Bold',
+        textAlign: 'center',
+    },
+    thankYouText: {
+        marginTop: 8,
+        fontSize: 16,
+        color: '#000',
+        fontFamily: 'Poppins_400Regular',
+        textAlign: 'center',
     },
     headerContainer: {
         alignItems: 'center',
@@ -437,6 +470,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 30,
         marginBottom: 30,
+    },
+    submitButtonDisabled: {
+        opacity: 0.6,
     },
     submitButtonText: {
         color: '#fff',
