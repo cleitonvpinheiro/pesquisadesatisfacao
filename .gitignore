@@ -1,5 +1,6 @@
 # Node modules
 node_modules/
+**/node_modules/
 
 # Logs
 logs/
@@ -17,9 +18,17 @@ backend/database.json
 backend/database.sqlite
 backend/database.sqlite-wal
 backend/database.sqlite-shm
+backend/database.sqlite-journal
 database.sqlite
 database.sqlite-wal
 database.sqlite-shm
+
+# Expo / React Native (caches locais)
+.expo-home/
+satisfacao-mobile/.expo/
+satisfacao-mobile/.expo-shared/
+satisfacao-mobile/android/
+satisfacao-mobile/ios/
 
 # Build
 dist/

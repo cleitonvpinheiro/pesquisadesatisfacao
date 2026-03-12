@@ -291,7 +291,9 @@ export default function QuestionarioScreen() {
                 <Text style={styles.submitButtonText}>{t('submit')}</Text>
             </TouchableOpacity>
             
-            <View style={{ height: 50 }} />
+            <View style={styles.footer}>
+                <Text style={styles.footerText}>Desenvolvido por Família Madalosso - Excelência em servir.</Text>
+            </View>
         </ScrollView>
     );
 }
@@ -479,5 +481,16 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         fontFamily: 'Poppins_700Bold',
+    },
+    footer: {
+        paddingTop: 10,
+        paddingBottom: 20,
+        alignItems: 'center',
+    },
+    footerText: {
+        fontSize: 12,
+        color: 'rgba(0,0,0,0.7)',
+        textAlign: 'center',
+        fontFamily: 'Poppins_400Regular',
     },
 });

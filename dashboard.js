@@ -726,7 +726,7 @@ window.closeUserModal = function() {
 };
 
 window.saveUser = async function() {
-    const username = document.getElementById('username').value;
+    const username = document.getElementById('username').value.trim();
     const role = document.getElementById('role').value;
     const password = document.getElementById('password').value;
     
@@ -736,14 +736,18 @@ window.saveUser = async function() {
     }
 
     const userData = { username, role };
-    if (password) userData.password = password;
-    else if (!currentUser) {
-        alert(t('fillAllFields')); // Reusing fillAllFields or we could add passwordRequired
-        return;
+    if (!currentUser) {
+        if (!password || password.length < 3) {
+            alert(t('fillAllFields'));
+            return;
+        }
+        userData.password = password;
+    } else if (password) {
+        userData.password = password;
     }
 
     try {
-        let url = `${urlBackend}/users`;
+        let url = '/users';
         let method = 'POST';
         
         if (currentUser) {
@@ -762,8 +766,18 @@ window.saveUser = async function() {
             loadUsers();
             alert(t('alertUserSaved'));
         } else {
-            const err = await response.json();
-            alert(t('alertUserError') + ': ' + (err.error || 'Erro desconhecido'));
+            let message = '';
+            try {
+                const err = await response.clone().json();
+                message = err?.error || '';
+            } catch {}
+            if (!message) {
+                try {
+                    message = (await response.text()) || '';
+                } catch {}
+            }
+            message = String(message).trim();
+            alert(t('alertUserError') + ': ' + (message || response.statusText || String(response.status)));
         }
     } catch (error) {
         console.error('Erro ao salvar usuário:', error);
@@ -775,7 +789,7 @@ window.deleteUser = async function(id) {
     if (!confirm(t('confirmDeleteUser'))) return;
 
     try {
-        const response = await authenticatedFetch(`${urlBackend}/users/${id}`, {
+        const response = await authenticatedFetch(`/users/${id}`, {
             method: 'DELETE'
         });
 

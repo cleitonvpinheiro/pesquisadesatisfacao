@@ -55,7 +55,6 @@ function handleLogin(event) {
         .then(response => {
             if (response.success) {
                 localStorage.setItem('userInfo', JSON.stringify(response.user));
-                localStorage.removeItem('authToken');
                 
                 // Redireciona para o dashboard
                 window.location.href = 'dashboard.html';
@@ -100,13 +99,7 @@ function authenticateUser(username, password) {
 
 // Função para verificar se o token ainda é válido
 function verifyToken() {
-    const token = localStorage.getItem('authToken');
-
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
     return fetch(getApiUrl('/verify-auth'), {
-        headers,
         credentials: 'include'
     })
     .then(response => {
@@ -157,7 +150,6 @@ function hideError() {
 
 // Função para fazer logout
 function logout() {
-    localStorage.removeItem('authToken');
     localStorage.removeItem('userInfo');
     window.location.href = 'login.html';
 }

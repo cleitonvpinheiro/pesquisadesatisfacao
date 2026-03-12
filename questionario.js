@@ -1,12 +1,23 @@
 // questionario.js — Formulário dinâmico
 document.addEventListener('DOMContentLoaded', () => {
+    const API_PORT = 3003;
+
+    function getApiUrl(path) {
+        const protocol = window.location.protocol.startsWith('https') ? 'https' : 'http';
+        const hostname = window.location.hostname;
+        const host = (!hostname || hostname === 'localhost' || hostname === '127.0.0.1')
+            ? 'localhost'
+            : hostname;
+        const cleanPath = path.startsWith('/') ? path : '/' + path;
+        return `${protocol}://${host}:${API_PORT}${cleanPath}`;
+    }
+
     // Carregar idioma salvo e aplicar traduções
     loadSavedLanguage();
     updatePageTexts();
     
     // Recupera a avaliação inicial escolhida
     const avaliacaoInicial = localStorage.getItem("avaliacaoInicial");
-    console.log("Avaliação inicial:", avaliacaoInicial);
 
     const form = document.getElementById('formSatisfacao');
     const questionsContainer = document.getElementById('questions-container');
@@ -68,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadFormConfig() {
         try {
-            const response = await fetch('http://localhost:3003/config/form');
+            const response = await fetch(getApiUrl('/config/form'), { credentials: 'include' });
             if (!response.ok) throw new Error('Falha ao carregar configuração');
             const config = await response.json();
             
@@ -235,8 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Envia os dados para o servidor
         try {
             // 1. Envia avaliação inicial (/avaliar)
-            const resAvaliacao = await fetch('http://localhost:3003/avaliar', {
+            const resAvaliacao = await fetch(getApiUrl('/avaliar'), {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dadosAvaliacao)
             });
@@ -244,8 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 2. Envia questionário completo (/questionario)
             try {
-                const resQuestionario = await fetch('http://localhost:3003/questionario', {
+                const resQuestionario = await fetch(getApiUrl('/questionario'), {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dadosQuestionario)
                 });

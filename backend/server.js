@@ -33,6 +33,10 @@ dotenv.config()
 
 const app = express()
 
+const isProduction = process.env.NODE_ENV === "production"
+const trustProxyEnabled = (process.env.TRUST_PROXY ?? (isProduction ? "true" : "false")) === "true"
+app.set("trust proxy", trustProxyEnabled ? 1 : false)
+
 const ldapEnabled = Boolean(process.env.LDAP_URL)
 if (ldapEnabled) {
   passport.use(new LdapStrategy(ldapOptions, (req, user, done) => {
@@ -102,19 +106,23 @@ const defaultOrigins = [
     'http://localhost:19006'
 ]
 const envOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
-const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])]
+const allowedOrigins = isProduction
+    ? [...new Set([...envOrigins])]
+    : [...new Set([...defaultOrigins, ...envOrigins])]
 
 function isAllowedOrigin(origin) {
     if (!origin) return true
     if (allowedOrigins.includes(origin)) return true
-
-    if (/^http:\/\/(localhost|127\.0\.0\.1):\d{2,5}$/.test(origin)) return true
-    if (/^http:\/\/(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):\d{2,5}$/.test(origin)) return true
+    if (!isProduction && /^http:\/\/(localhost|127\.0\.0\.1):\d{2,5}$/.test(origin)) return true
+    if (!isProduction && /^http:\/\/(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):\d{2,5}$/.test(origin)) return true
 
     return false
 }
 app.use(cors({
     origin: function(origin, callback) {
+        if (isProduction && allowedOrigins.length === 0 && origin) {
+            return callback(new Error('Not allowed by CORS'))
+        }
         if (isAllowedOrigin(origin)) {
             return callback(null, true)
         }
@@ -162,7 +170,7 @@ const submitLimiter = rateLimit({
     legacyHeaders: false,
 })
 
-app.use(bodyParser.json({ limit: '10mb' }))
+app.use(bodyParser.json({ limit: process.env.BODY_LIMIT || '1mb' }))
 app.use(cookieParser())
 
 const SQLITE_FILE = process.env.SQLITE_FILE || "./database.sqlite"
@@ -248,7 +256,17 @@ function requireAuth(req, res, next) {
     if (!session || session.expires < Date.now()) {
         sessions.delete(token)
         // Remove cookie se expirado
-        res.clearCookie('authToken')
+        const isSecureRequest = Boolean(req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https')
+        res.clearCookie('authToken', { httpOnly: true, sameSite: 'strict', secure: isProduction ? isSecureRequest : false, path: '/' })
+        return res.status(401).json({ error: 'Token inválido ou expirado' })
+    }
+
+    const currentUa = String(req.headers['user-agent'] || '')
+    const currentUaHash = crypto.createHash('sha256').update(currentUa).digest('hex')
+    if (session.uaHash && session.uaHash !== currentUaHash) {
+        sessions.delete(token)
+        const isSecureRequest = Boolean(req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https')
+        res.clearCookie('authToken', { httpOnly: true, sameSite: 'strict', secure: isProduction ? isSecureRequest : false, path: '/' })
         return res.status(401).json({ error: 'Token inválido ou expirado' })
     }
 
@@ -259,10 +277,15 @@ function requireAuth(req, res, next) {
 }
 
 // Esquemas de validação Joi
+const loginPasswordMinLengthEnv = Number.parseInt(process.env.LOGIN_PASSWORD_MIN_LENGTH || "", 10)
+const loginPasswordMinLength = Number.isFinite(loginPasswordMinLengthEnv)
+    ? loginPasswordMinLengthEnv
+    : (isProduction ? 8 : 3)
+
 const loginSchema = Joi.object({
     // Permite usuários de LDAP com caracteres comuns: letras, números, ponto, underline, hífen, @ e barra invertida (domínio\\usuário)
     username: Joi.string().pattern(/^[A-Za-z0-9._\-@\\]{3,64}$/).required(),
-    password: Joi.string().min(3).max(50).required()
+    password: Joi.string().min(loginPasswordMinLength).max(128).required()
 })
 
 const avaliacaoSchema = Joi.object({
@@ -342,25 +365,28 @@ app.post("/login", authLimiter, async (req, res, next) => {
   const createSession = (user) => {
       const token = generateToken()
       const expires = Date.now() + (24 * 60 * 60 * 1000) // 24h
+      const uaHash = crypto.createHash('sha256').update(String(req.headers['user-agent'] || '')).digest('hex')
 
       sessions.set(token, {
         user: {
           username: user.username,
           role: user.role
         },
+        uaHash,
         expires,
         createdAt: Date.now(),
         lastAccess: Date.now()
       })
 
+      const isSecureRequest = Boolean(req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https')
       res.cookie("authToken", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction ? isSecureRequest : false,
         sameSite: "strict",
+        path: "/",
         maxAge: 24 * 60 * 60 * 1000
       })
 
-      console.log(`Login bem-sucedido para: ${user.username} (${user.role})`)
       res.json({
         success: true,
         user: {
@@ -443,7 +469,8 @@ app.post("/logout", (req, res) => {
         }
 
         // Remove cookie
-        res.clearCookie('authToken')
+        const isSecureRequest = Boolean(req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https')
+        res.clearCookie('authToken', { httpOnly: true, sameSite: 'strict', secure: isProduction ? isSecureRequest : false, path: '/' })
 
         res.json({
             success: true,
@@ -664,7 +691,10 @@ app.get("/users", requireAuth, requireAdmin, async (req, res) => {
             .prepare("SELECT id, username, role, createdAt FROM users ORDER BY createdAt DESC")
             .all()
             .map(u => ({ ...u, origin: 'database' }));
-        const envUsers = validUsers.map(u => ({ username: u.username, role: u.role, origin: 'env', id: 'env_' + u.username }));
+        const dbUsernames = new Set(dbUsers.map(u => u.username));
+        const envUsers = validUsers
+            .filter(u => !dbUsernames.has(u.username))
+            .map(u => ({ username: u.username, role: u.role, origin: 'env', id: 'env_' + u.username }));
         
         // Combina as listas
         const allUsers = [...dbUsers, ...envUsers];
@@ -692,7 +722,7 @@ app.post("/users", requireAuth, requireAdmin, async (req, res) => {
         
         // Verifica se usuário já existe (no DB ou Env)
         const usernameExists = sqlite.prepare("SELECT 1 FROM users WHERE username = ?").get(value.username)
-        if (usernameExists || validUsers.some(u => u.username === value.username)) {
+        if (usernameExists) {
             return res.status(400).json({ error: "Usuário já existe" });
         }
 

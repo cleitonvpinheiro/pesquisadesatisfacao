@@ -38,6 +38,59 @@ O sistema é composto por três módulos principais integrados:
 
 ---
 
+## 🧑‍💻 Execução (Desenvolvimento)
+
+Pré-requisitos:
+* Node.js instalado
+* Rede/host acessível entre front, backend e (se usado) mobile
+
+Comandos (na raiz do projeto):
+* Instalar dependências do backend: `npm run setup`
+* Subir backend: `npm run start`
+* Subir front (arquivos estáticos): `npm run start:front`
+* Subir mobile (Expo): `npm run start:mobile`
+* Subir tudo junto: `npm run dev`
+
+Observações:
+* O backend usa a porta **3003** por padrão.
+* O front usa a porta **8000** por padrão.
+* No web, as chamadas de API usam o mesmo host do site (e a porta 3003).
+* O mobile (Expo) sobe o Metro na porta **8082** (script `start:mobile`).
+
+Endereços úteis (com `npm run start:front`):
+* Pesquisa (totem/web): `http://localhost:8000/formulario-refeitorio.html`
+* Login do painel: `http://localhost:8000/login.html`
+* Painel (após login): `http://localhost:8000/dashboard.html`
+* API (backend): `http://localhost:3003`
+
+Notas (Windows/Expo):
+* O `start:mobile` usa um `EXPO_HOME` local (`.expo-home/`) e inicia com `--clear` para evitar problemas de permissão/caches no Windows.
+
+Gestão de usuários:
+* Usuários de ambiente (`origin=env`) não podem ser editados via interface.
+* Para editar um `admin`, crie um usuário `admin` no banco via painel (origem `database`).
+
+---
+
+## 🔐 Produção (Exposto na internet)
+
+Recomendado:
+* Publicar com **HTTPS** (TLS) e um reverse proxy (Nginx/Traefik/Caddy) na frente.
+* Expor apenas o proxy na internet (porta 443) e manter o Node em rede interna.
+* Travar CORS para aceitar somente os domínios reais do front.
+
+Variáveis de ambiente importantes (backend):
+* `NODE_ENV=production`
+* `TRUST_PROXY=true` (quando houver reverse proxy)
+* `ALLOWED_ORIGINS=https://seu-dominio.com,https://painel.seu-dominio.com`
+* `BODY_LIMIT=1mb` (opcional)
+* Rate limit: `RATE_LIMIT_WINDOW_MS` e `RATE_LIMIT_MAX_REQUESTS` (opcional)
+
+Mobile (produção):
+* Definir `EXPO_PUBLIC_API_URL=https://api.seu-dominio.com` para o app apontar para o backend via HTTPS.
+
+---
+
 ## 📱 Guia de Instalação (Aplicativo Android)
 
 Para instalar o aplicativo nos tablets ou celulares da equipe:
@@ -51,7 +104,7 @@ Para instalar o aplicativo nos tablets ou celulares da equipe:
 
 ## 💻 Acesso ao Painel Administrativo
 
-O painel pode ser acessado de qualquer computador na rede interna:
+O painel pode ser acessado conforme o ambiente de publicação (rede interna ou internet):
 
 1.  **Endereço**: Acesse via navegador (Chrome/Edge) no endereço fornecido pela TI.
 2.  **Login**: Utilize suas credenciais de acesso.

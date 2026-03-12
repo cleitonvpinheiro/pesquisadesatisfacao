@@ -920,3 +920,12 @@ body.dark-mode .close-modal:hover {
     margin: 20% auto;
   }
 }
+
+.app-footer {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--cor-borda);
+  text-align: center;
+  color: var(--cor-cinza);
+  font-size: 0.9rem;
+}

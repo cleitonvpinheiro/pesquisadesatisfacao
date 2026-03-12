@@ -1,3 +1,4 @@
+
 // Sistema de autenticação para o dashboard
 
 // Configuração da API
@@ -27,15 +28,7 @@ function initAuth() {
 
 // Função para verificar se o usuário está autenticado
 function checkAuth() {
-    const token = localStorage.getItem('authToken');
-
-    const headers = {};
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
     return fetch(getApiUrl('/verify-auth'), {
-        headers,
         credentials: 'include'
     })
     .then(response => {
@@ -71,8 +64,6 @@ function redirectToLogin() {
         return;
     }
 
-    // Remove tokens inválidos
-    localStorage.removeItem('authToken');
     localStorage.removeItem('userInfo');
     
     // Redireciona para login
@@ -81,19 +72,12 @@ function redirectToLogin() {
 
 // Função para fazer logout
 function logout() {
-    const token = localStorage.getItem('authToken');
-    
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
     fetch(getApiUrl('/logout'), {
         method: 'POST',
-        headers,
         credentials: 'include'
     }).catch(error => console.error('Erro no logout:', error));
     
     // Remove dados locais
-    localStorage.removeItem('authToken');
     localStorage.removeItem('userInfo');
     
     // Redireciona para login
@@ -102,8 +86,6 @@ function logout() {
 
 // Helper para fetch autenticado
 function authenticatedFetch(url, options = {}) {
-    const token = localStorage.getItem('authToken');
-    
     // Se a URL for relativa ou apenas o path, usa getApiUrl
     let finalUrl = url;
     if (url.startsWith('/')) {
@@ -114,7 +96,6 @@ function authenticatedFetch(url, options = {}) {
     }
     
     const defaultHeaders = { 'Content-Type': 'application/json' };
-    if (token) defaultHeaders['Authorization'] = `Bearer ${token}`;
     
     const finalOptions = {
         ...options,

@@ -28,6 +28,13 @@ body {
     box-shadow: 0 6px 20px rgb(0, 0, 0, 0.1);
 }
 
+.app-footer {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+}
+
 img {
     width: 90%;
     margin-bottom: 20px;

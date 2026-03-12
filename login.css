@@ -31,6 +31,17 @@ img {
     z-index: 1;
 }
 
+.app-footer {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .app-footer {
+    color: rgba(255, 255, 255, 0.65);
+}
+
 /* Controles superiores - Clean Design */
 .top-controls {
     position: fixed;

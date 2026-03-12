@@ -62,8 +62,8 @@ const translations = {
     logout: 'Sair',
     
     // Login
-    loginTitle: 'Acesso ao Dashboard',
-    loginSubtitle: 'Entre com suas credenciais para acessar o painel administrativo',
+    loginTitle: 'Acesso ao Painel Administrativo',
+    loginSubtitle: 'Entre com suas credenciais para acessar o painel',
     username: 'Usuário:',
     password: 'Senha:',
     usernamePlaceholder: 'Digite seu usuário',
@@ -486,8 +486,11 @@ function loadSavedLanguage() {
 
 // Função para atualizar textos da página
 function updatePageTexts() {
-  // Atualiza título da página
-  document.title = t('pageTitle');
+  const titleEl = document.querySelector('title[data-translate]')
+  if (titleEl) {
+    const titleKey = titleEl.getAttribute('data-translate')
+    if (titleKey) document.title = t(titleKey)
+  }
   
   // Atualiza elementos com data-translate
   document.querySelectorAll('[data-translate]').forEach(element => {

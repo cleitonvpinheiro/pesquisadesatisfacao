@@ -17,34 +17,38 @@ export default function AvaliacaoScreen() {
             <View style={styles.languageContainer}>
                 <LanguageSelector />
             </View>
-            
-            <Image 
-                source={require('../../assets/images/logo.png')} 
-                style={styles.logo}
-                resizeMode="contain"
-            />
-            <Text style={styles.title}>{t('mainTitle')}</Text>
-            
-            <TouchableOpacity 
-                style={[styles.button, styles.excelenteButton]} 
-                onPress={() => handleSelection('excelente')}
-            >
-                <Text style={styles.buttonText}>😃 {t('excellent')}</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-                style={[styles.button, styles.bomButton]} 
-                onPress={() => handleSelection('bom')}
-            >
-                <Text style={styles.buttonText}>😐 {t('good')}</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-                style={[styles.button, styles.ruimButton]} 
-                onPress={() => handleSelection('ruim')}
-            >
-                <Text style={styles.buttonText}>😞 {t('bad')}</Text>
-            </TouchableOpacity>
+            <View style={styles.content}>
+                <Image 
+                    source={require('../../assets/images/logo.png')} 
+                    style={styles.logo}
+                    resizeMode="contain"
+                />
+                <Text style={styles.title}>{t('mainTitle')}</Text>
+                
+                <TouchableOpacity 
+                    style={[styles.button, styles.excelenteButton]} 
+                    onPress={() => handleSelection('excelente')}
+                >
+                    <Text style={styles.buttonText}>😃 {t('excellent')}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                    style={[styles.button, styles.bomButton]} 
+                    onPress={() => handleSelection('bom')}
+                >
+                    <Text style={styles.buttonText}>😐 {t('good')}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                    style={[styles.button, styles.ruimButton]} 
+                    onPress={() => handleSelection('ruim')}
+                >
+                    <Text style={styles.buttonText}>😞 {t('bad')}</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={styles.footer}>
+                <Text style={styles.footerText}>Desenvolvido por Família Madalosso - Excelência em servir.</Text>
+            </View>
         </View>
     );
 }
@@ -52,11 +56,15 @@ export default function AvaliacaoScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'flex-start',
+        justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
         paddingTop: 60,
         backgroundColor: '#faab45',
+    },
+    content: {
+        width: '100%',
+        alignItems: 'center',
     },
     languageContainer: {
         position: 'absolute',
@@ -109,5 +117,17 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0, 0, 0, 0.2)',
         textShadowOffset: {width: 1, height: 1},
         textShadowRadius: 3
+    },
+    footer: {
+        width: '100%',
+        paddingTop: 12,
+        paddingBottom: 6,
+        alignItems: 'center',
+    },
+    footerText: {
+        fontSize: 12,
+        color: 'rgba(0,0,0,0.7)',
+        textAlign: 'center',
+        fontFamily: 'Poppins_400Regular',
     },
 });
